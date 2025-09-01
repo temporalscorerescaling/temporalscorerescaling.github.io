@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -133,6 +132,29 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+    }
+
+    /* TSR button always active styling */
+    .method-control-buttons button[data-method="tsr"] {
+      background-color: #10b981 !important;
+      color: white !important;
+      cursor: default;
+    }
+
+    /* Other method buttons */
+    .method-control-buttons button:not([data-method="tsr"]) {
+      background-color: #e5e7eb;
+      color: #374151;
+      cursor: pointer;
+    }
+
+    .method-control-buttons button:not([data-method="tsr"]).active {
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .method-control-buttons button:not([data-method="tsr"]):hover:not(.active) {
+      background-color: #d1d5db;
     }
 
     .method-grid {
@@ -410,152 +432,167 @@
         While CNS is widely used to control sample variance and improve quality, it <strong>only applies to stochastic samplers</strong> and <strong>a fixed scaling factor over sampling horizon often leads to impaired distribution and mode dropping.</strong>
       </p>
 
-    </div>
-  </div>
-</section>
-
-<!-- Illustrative Example Section -->
-<section class="section hero is-light">
-  <div class="container is-max-desktop">
-    <div class="content">
-      
-      <h2 class="title is-3">Illustrative Example</h2>
-      
+      <!-- Illustrative Examples Section -->
+      <h2 class="title is-3">Illustrative Examples</h2>
       <p>
-        To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a simple isotropic Gaussian mixture as a data distribution. 
+        To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a <strong>simple isotropic Gaussian mixture</strong> as a data distribution, where top 3 modes are class 0 and bottom 3 modes are class 1. 
         We use the analytical score function of the GMM for all methods, for both conditional and unconditional generation. 
         Intuitively, we would want the sampled distribution to preserve the global structure of the data distribution, while adjusting the "sharpness" of each mode to control sample likelihood and diversity.
       </p>
 
-      <!-- Interactive Controls for Static Figures -->
-      <div class="interactive-viz-container">
-
-        <!-- Unconditional Generation Section -->
-        <div class="generation-section">
-          <h3 class="title is-4">Unconditional Generation</h3>
-          
-          <!-- Method Selection Buttons for Unconditional -->
-          <div class="control-group">
-            <div class="method-control-buttons">
-              <button onclick="toggleMethod('ddpm', 'unconditional')" id="ddpm-unconditional-btn" 
-                      style="background-color: #2563eb; color: white;">
-                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
-                DDPM
-              </button>
-              <button onclick="toggleMethod('cns', 'unconditional')" id="cns-unconditional-btn" 
-                      style="background-color: #059669; color: white;">
-                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
-                CNS
-              </button>
-              <button onclick="toggleMethod('tsr', 'unconditional')" id="tsr-unconditional-btn" 
-                      style="background-color: #7c3aed; color: white;">
-                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
-                TSR (Ours)
-              </button>
-              <button onclick="showAllMethods('unconditional')" 
-                      style="background-color: #4b5563; color: white;">
-                Show All
-              </button>
-              <button onclick="hideAllMethods('unconditional')" 
-                      style="background-color: #9ca3af; color: white;">
-                Hide All
-              </button>
-            </div>
-          </div>
-          
-          <!-- Unconditional Generation Plots -->
-          <div class="method-grid" id="unconditional-grid">
-            <div class="method-plot ddpm-plot unconditional-plot" id="ddpm-unconditional">
-              <div class="image-container">
-                <img src="static/images/ddpm.png" alt="DDPM - Unconditional">
-              </div>
-              <p><strong>DDPM</strong></p>
-            </div>
-            <div class="method-plot cns-plot unconditional-plot" id="cns-unconditional">
-              <div class="image-container">
-                <img src="static/images/cns.png" alt="CNS - Unconditional">
-              </div>
-              <p><strong>+Constant Noise Scaling</strong></p>
-            </div>
-            <div class="method-plot tsr-plot unconditional-plot" id="tsr-unconditional">
-              <div class="image-container">
-                <img src="static/images/tsr.png" alt="TSR - Unconditional">
-              </div>
-              <p><strong>+Temporal Score Rescaling</strong></p>
-            </div>
-          </div>
+      <!-- Unconditional Generation -->
+      <div class="generation-section">
+        <h3 class="title is-4">Unconditional Generation</h3>
+        
+        <div class="method-control-buttons">
+          <button data-method="tsr" class="button">
+            <span class="icon"><i class="fas fa-star"></i></span>
+            <span>TSR (Ours)</span>
+          </button>
+          <button data-method="ddpm" class="button active" onclick="selectMethod('unconditional', 'ddpm')">
+            <!-- <span class="icon"><i class="fas fa-random"></i></span> -->
+            <span>DDPM</span>
+          </button>
+          <button data-method="cns" class="button" onclick="selectMethod('unconditional', 'cns')">
+            <!-- <span class="icon"><i class="fas fa-volume-up"></i></span> -->
+            <span>CNS</span>
+          </button>
         </div>
 
-        <!-- Conditional Generation Section -->
-        <div class="generation-section">
-          <h3 class="title is-4">Conditional Generation</h3>
-          
-          <!-- Method Selection Buttons for Conditional -->
-          <div class="control-group">
-            <div class="method-control-buttons">
-              <button onclick="toggleMethod('ddpm', 'conditional')" id="ddpm-conditional-btn" 
-                      style="background-color: #2563eb; color: white;">
-                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
-                DDPM
-              </button>
-              <button onclick="toggleMethod('cns', 'conditional')" id="cns-conditional-btn" 
-                      style="background-color: #059669; color: white;">
-                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
-                CNS
-              </button>
-              <button onclick="toggleMethod('tsr', 'conditional')" id="tsr-conditional-btn" 
-                      style="background-color: #7c3aed; color: white;">
-                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
-                TSR (Ours)
-              </button>
-              <button onclick="showAllMethods('conditional')" 
-                      style="background-color: #4b5563; color: white;">
-                Show All
-              </button>
-              <button onclick="hideAllMethods('conditional')" 
-                      style="background-color: #9ca3af; color: white;">
-                Hide All
-              </button>
+        <div class="method-grid">
+          <div class="method-plot" id="unconditional-tsr">
+            <div class="image-container">
+              <img src="static/images/tsr.png" alt="TSR Unconditional Generation">
             </div>
+            <h4 class="subtitle is-5">DDPM+TSR (Ours)</h4>
           </div>
-          
-          <!-- Conditional Generation Plots -->
-          <div class="method-grid" id="conditional-grid">
-            <div class="method-plot ddpm-plot conditional-plot" id="ddpm-conditional">
-              <div class="image-container">
-                <img src="static/images/ddpm_cfg.png" alt="DDPM - Conditional">
-              </div>
-              <p><strong>+Classifier Free Guidance</strong></p>
+          <div class="method-plot" id="unconditional-ddpm">
+            <div class="image-container">
+              <img src="static/images/ddpm.png" alt="DDPM Unconditional Generation">
             </div>
-            <div class="method-plot cns-plot conditional-plot" id="cns-conditional">
-              <div class="image-container">
-                <img src="static/images/cns_cond.png" alt="CNS - Conditional">
-              </div>
-              <p><strong>+Constant Noise Scaling</strong></p>
+            <h4 class="subtitle is-5">DDPM</h4>
+          </div>
+          <div class="method-plot hidden" id="unconditional-cns">
+            <div class="image-container">
+              <img src="static/images/cns.png" alt="CNS Unconditional Generation">
             </div>
-            <div class="method-plot tsr-plot conditional-plot" id="tsr-conditional">
-              <div class="image-container">
-                <img src="static/images/tsr_cond.png" alt="TSR - Conditional">
-              </div>
-              <p><strong>+Temporal Score Rescaling</strong></p>
-            </div>
+            <h4 class="subtitle is-5">DDPM+CNS</h4>
           </div>
         </div>
-
-        <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
-          <p><strong>Figure:</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
+                <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <p><strong>Figure 1.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
           The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
           Our TSR method shows improved control over the sampling process compared to baseline methods.</p>
         </div>
+
       </div>
 
-      <p>
-        In contrast, our proposed Temporal Score Rescaling (TSR) uses a time-dependent scaling schedule that preserves the global structure of the sampled distribution and is compatible with both deterministic and stochastic samplers, addressing these fundamental limitations of CNS.
-      </p>
+      <!-- Conditional Generation -->
+      <div class="generation-section">
+        <h3 class="title is-4">Conditional Generation</h3>
+        
+        <div class="method-control-buttons">
+          <button data-method="tsr" class="button">
+            <span class="icon"><i class="fas fa-star"></i></span>
+            <span>TSR (Ours)</span>
+          </button>
+          <button data-method="ddpm" class="button active" onclick="selectMethod('conditional', 'ddpm')">
+            <!-- <span class="icon"><i class="fas fa-random"></i></span> -->
+            <span>DDPM</span>
+          </button>
+          <button data-method="cfg" class="button" onclick="selectMethod('conditional', 'cfg')">
+            <!-- <span class="icon"><i class="fas fa-cog"></i></span> -->
+            <span>CFG</span>
+          </button>
+          <button data-method="cns" class="button" onclick="selectMethod('conditional', 'cns')">
+            <!-- <span class="icon"><i class="fas fa-cog"></i></span> -->
+            <span>CNS</span>
+          </button>
+        </div>
+
+        <div class="method-grid">
+          <div class="method-plot" id="conditional-tsr">
+            <div class="image-container">
+              <img src="static/images/tsr_cond.png" alt="TSR Conditional Generation">
+            </div>
+            <h4 class="subtitle is-5">DDPM+TSR (Ours)</h4>
+          </div>
+          <div class="method-plot" id="conditional-ddpm">
+            <div class="image-container">
+              <img src="static/images/ddpm_cond.png" alt="DDPM Conditional Generation">
+            </div>
+            <h4 class="subtitle is-5">DDPM</h4>
+          </div>
+          <div class="method-plot hidden" id="conditional-cfg">
+            <div class="image-container">
+              <img src="static/images/ddpm_cond_cfg.png" alt="CFG Conditional Generation">
+            </div>
+            <h4 class="subtitle is-5">DDPM+CFG</h4>
+          </div>
+          <div class="method-plot hidden" id="conditional-cns">
+            <div class="image-container">
+              <img src="static/images/cns_cond.png" alt="CNS Conditional Generation">
+            </div>
+            <h4 class="subtitle is-5">DDPM+CNS</h4>
+          </div>
+        </div>
+                <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <p><strong>Figure 2.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
+          The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
+          Our TSR method shows improved control over the sampling process compared to baseline methods.</p>
+        </div>
+
+      </div>
 
     </div>
   </div>
 </section>
+
+<script>
+// Method selection functionality
+function selectMethod(section, method) {
+  // Update button states
+  const buttons = document.querySelectorAll(`[onclick*="${section}"]`);
+  buttons.forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Set active button (excluding TSR which is always shown)
+  const activeButton = document.querySelector(`[onclick="selectMethod('${section}', '${method}')"]`);
+  if (activeButton) {
+    activeButton.classList.add('active');
+  }
+  
+  // Hide all method plots except TSR
+  const allPlots = document.querySelectorAll(`#${section}-ddpm, #${section}-flow, #${section}-cfg, #${section}-cns`);
+  allPlots.forEach(plot => {
+    plot.classList.add('hidden');
+  });
+  
+  // Show selected method plot
+  const selectedPlot = document.querySelector(`#${section}-${method}`);
+  if (selectedPlot) {
+    selectedPlot.classList.remove('hidden');
+  }
+  
+  // TSR is always visible
+  const tsrPlot = document.querySelector(`#${section}-tsr`);
+  if (tsrPlot) {
+    tsrPlot.classList.remove('hidden');
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Set initial state - show TSR + DDPM for both sections
+  selectMethod('unconditional', 'ddpm');
+  selectMethod('conditional', 'ddpm');
+});
+</script>
+
+
+
+
 
 <!-- Interactive Visualization Section -->
 <section class="section">
@@ -617,6 +654,7 @@
         <div class="play-control">
           <button onclick="toggleAnimation()" id="play-btn">
             <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             Play Animation
@@ -658,49 +696,40 @@
 </footer>
 
 <script>
-  // Static plots control variables - now separate for unconditional and conditional
-  let visibleMethodsUnconditional = new Set(['ddpm', 'cns', 'tsr']); // All visible by default
-  let visibleMethodsConditional = new Set(['ddpm', 'cns', 'tsr']); // All visible by default
+  // Static plots control variables
+  let visibleMethods = new Set(['ddpm', 'cns', 'tsr']); // All visible by default
 
-  // Toggle method visibility for specific generation type
-  function toggleMethod(method, generationType) {
-    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
-    
+  // Toggle method visibility
+  function toggleMethod(method) {
     if (visibleMethods.has(method)) {
       visibleMethods.delete(method);
     } else {
       visibleMethods.add(method);
     }
-    updatePlotVisibility(generationType);
-    updateButtonStates(generationType);
+    updatePlotVisibility();
+    updateButtonStates();
   }
 
-  // Show all methods for specific generation type
-  function showAllMethods(generationType) {
-    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
+  // Show all methods
+  function showAllMethods() {
+    visibleMethods = new Set(['ddpm', 'cns', 'tsr']);
+    updatePlotVisibility();
+    updateButtonStates();
+  }
+
+  // Hide all methods
+  function hideAllMethods() {
     visibleMethods.clear();
-    visibleMethods.add('ddpm');
-    visibleMethods.add('cns');
-    visibleMethods.add('tsr');
-    updatePlotVisibility(generationType);
-    updateButtonStates(generationType);
+    updatePlotVisibility();
+    updateButtonStates();
   }
 
-  // Hide all methods for specific generation type
-  function hideAllMethods(generationType) {
-    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
-    visibleMethods.clear();
-    updatePlotVisibility(generationType);
-    updateButtonStates(generationType);
-  }
-
-  // Update plot visibility for specific generation type
-  function updatePlotVisibility(generationType) {
+  // Update plot visibility
+  function updatePlotVisibility() {
     const methods = ['ddpm', 'cns', 'tsr'];
-    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
     
     methods.forEach(method => {
-      const plots = document.querySelectorAll(`.${method}-plot.${generationType}-plot`);
+      const plots = document.querySelectorAll(`.${method}-plot`);
       plots.forEach(plot => {
         if (visibleMethods.has(method)) {
           plot.classList.remove('hidden');
@@ -711,38 +740,39 @@
     });
 
     // Update grid layout to adapt to visible plots
-    const gridId = `${generationType}-grid`;
-    const grid = document.getElementById(gridId);
-    if (grid) {
-      const visibleCount = visibleMethods.size;
-      if (visibleCount === 0) {
-        grid.style.display = 'none';
-      } else {
-        grid.style.display = 'grid';
-        // Dynamically adjust grid columns based on visible plots
-        if (visibleCount === 1) {
-          grid.style.gridTemplateColumns = '1fr';
-        } else if (visibleCount === 2) {
-          grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    const grids = ['unconditional-grid', 'conditional-grid'];
+    grids.forEach(gridId => {
+      const grid = document.getElementById(gridId);
+      if (grid) {
+        const visibleCount = visibleMethods.size;
+        if (visibleCount === 0) {
+          grid.style.display = 'none';
         } else {
-          grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+          grid.style.display = 'grid';
+          // Dynamically adjust grid columns based on visible plots
+          if (visibleCount === 1) {
+            grid.style.gridTemplateColumns = '1fr';
+          } else if (visibleCount === 2) {
+            grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+          } else {
+            grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+          }
         }
       }
-    }
+    });
   }
 
-  // Update button states for specific generation type
-  function updateButtonStates(generationType) {
-    const methods = ['ddpm', 'cns', 'tsr']; // Fixed typo: was 'ddmp'
+  // Update button states
+  function updateButtonStates() {
+    const methods = ['ddmp', 'cns', 'tsr'];
     const colors = {
       'ddpm': '#2563eb',
       'cns': '#059669', 
       'tsr': '#7c3aed'
     };
-    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
 
     methods.forEach(method => {
-      const btn = document.getElementById(`${method}-${generationType}-btn`);
+      const btn = document.getElementById(`${method}-btn`);
       const color = colors[method];
       
       if (btn) {
@@ -750,14 +780,12 @@
           // Active state
           btn.style.backgroundColor = color;
           btn.style.color = 'white';
-          const span = btn.querySelector('span');
-          if (span) span.style.opacity = '0.9';
+          btn.querySelector('span').style.opacity = '0.9';
         } else {
           // Inactive state
           btn.style.backgroundColor = '#d1d5db';
           btn.style.color = '#6b7280';
-          const span = btn.querySelector('span');
-          if (span) span.style.opacity = '0.5';
+          btn.querySelector('span').style.opacity = '0.5';
         }
       }
     });
@@ -1280,6 +1308,59 @@
         Play Animation
       `;
       btn.style.backgroundColor = '#10b981';
+      return;
+    }
+    
+    slider.value = value;
+    updateAllPlots();
+    
+    // Calculate delay - faster at beginning (noise), slower as we approach data
+    let delay;
+    if (t > 0.5) {
+      // First half (T=1.0 to T=0.5): constant fast speed
+      delay = 10;
+    } else {
+      // Second half (T=0.5 to T=0.0): linear deceleration for smoother approach to data
+      // Map t from [0.5, 0.0] to [0, 1] for interpolation
+      const normalizedT = (0.5 - t) / 0.5;
+      // Linear interpolation from 10ms to 50ms
+      delay = 10 + 40 * normalizedT;
+    }
+    
+    if (isPlaying) {
+      animationId = setTimeout(animate, delay);
+    }
+  }
+
+  function toggleAnimation() {
+    isPlaying = !isPlaying;
+    const btn = document.getElementById('play-btn');
+    const slider = document.getElementById('t-slider');
+    
+    if (isPlaying) {
+      // Reset to beginning (slider=0, T=1.0 noise) if at the end
+      if (parseFloat(slider.value) >= 1) {
+        slider.value = 0;
+        updateAllPlots();
+      }
+      
+      btn.innerHTML = `
+        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Pause Animation
+      `;
+      btn.style.backgroundColor = '#dc2626';
+      animate();
+    } else {
+      btn.innerHTML = `
+        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Play Animation
+      `;
+      btn.style.backgroundColor = '#10b981';
       if (animationId) {
         clearTimeout(animationId);
       }
@@ -1300,11 +1381,9 @@
   // Initialize - load data first, then plot
   window.addEventListener('DOMContentLoaded', () => {
     loadFlowData();
-    // Initialize static plot visibility for both generation types
-    updatePlotVisibility('unconditional');
-    updatePlotVisibility('conditional');
-    updateButtonStates('unconditional');
-    updateButtonStates('conditional');
+    // Initialize static plot visibility
+    updatePlotVisibility();
+    updateButtonStates();
   });
 </script>
 
