@@ -1,41 +1,51 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
-  <!-- Replace the content tag with appropriate information -->
-  <meta name="description" content="DESCRIPTION META TAG">
-  <meta property="og:title" content="SOCIAL MEDIA TITLE TAG"/>
-  <meta property="og:description" content="SOCIAL MEDIA DESCRIPTION TAG TAG"/>
+  <!-- Meta tags for social media banners -->
+  <meta name="description" content="Temporal Score Rescaling for Temperature Sampling in Diffusion and Flow Models">
+  <meta property="og:title" content="Temporal Score Rescaling for Temperature Sampling"/>
+  <meta property="og:description" content="Simple Way of Controlling the Temperature of Diffusion and Flow models"/>
   <meta property="og:url" content="URL OF THE WEBSITE"/>
-  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
   <meta property="og:image" content="static/image/your_banner_image.png" />
   <meta property="og:image:width" content="1200"/>
   <meta property="og:image:height" content="630"/>
 
-
-  <meta name="twitter:title" content="TWITTER BANNER TITLE META TAG">
-  <meta name="twitter:description" content="TWITTER BANNER DESCRIPTION META TAG">
-  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
+  <meta name="twitter:title" content="Temporal Score Rescaling for Temperature Sampling">
+  <meta name="twitter:description" content="Simple Way of Controlling the Temperature of Diffusion and Flow models">
   <meta name="twitter:image" content="static/images/your_twitter_banner_image.png">
   <meta name="twitter:card" content="summary_large_image">
-  <!-- Keywords for your paper to be indexed by-->
-  <meta name="keywords" content="KEYWORDS SHOULD BE PLACED HERE">
+  <meta name="keywords" content="diffusion models, flow matching, temperature sampling, score rescaling">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-
-  <title>Academic Project Page</title>
+  <title>Temporal Score Rescaling for Temperature Sampling in Diffusion and Flow Models</title>
   <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
-  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
-  rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
 
   <link rel="stylesheet" href="static/css/bulma.min.css">
   <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
   <link rel="stylesheet" href="static/css/bulma-slider.min.css">
   <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
-  <link rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="static/css/index.css">
+
+  <!-- MathJax for mathematical notation -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  </script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
@@ -43,29 +53,237 @@
   <script src="static/js/bulma-carousel.min.js"></script>
   <script src="static/js/bulma-slider.min.js"></script>
   <script src="static/js/index.js"></script>
+
+  <!-- Plotly for interactive visualizations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+
+  <style>
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+    }
+    
+    .slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+      border: none;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+
+    /* Smooth transitions for plot visibility */
+    .method-plot {
+      transition: all 0.3s ease-in-out;
+    }
+    
+    .method-plot.hidden {
+      display: none !important;
+    }
+
+    /* Grid auto-fit when plots are hidden */
+    .grid.adaptive {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Force K button styling */
+    button[id^="k-btn-"][data-selected="true"] {
+      background-color: #2563eb !important;
+      color: #ffffff !important;
+    }
+    
+    button[id^="k-btn-"][data-selected="false"] {
+      background-color: #e5e7eb !important;
+      color: #374151 !important;
+    }
+    
+    button[id^="k-btn-"] {
+      border: none !important;
+    }
+
+    /* Custom styling for method plots */
+    .method-control-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .method-control-buttons button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .method-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .method-plot {
+      text-align: center;
+    }
+
+    .method-plot .image-container {
+      background-color: #f8f9fa;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .method-plot img {
+      width: 100%;
+      height: 16rem;
+      object-fit: contain;
+      border-radius: 0.25rem;
+    }
+
+    .interactive-viz-container {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .control-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .control-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .button-group button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    #plotly-chart {
+      width: 100%;
+      height: 450px;
+      position: relative;
+    }
+
+    #loading-spinner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .time-control {
+      margin-top: 1.5rem;
+    }
+
+    .time-control input[type="range"] {
+      width: 100%;
+      height: 0.5rem;
+      background: #e5e7eb;
+      border-radius: 0.5rem;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .play-control {
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .play-control button {
+      padding: 0.5rem 1.5rem;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .play-control button:hover {
+      background: #059669;
+    }
+
+    /* Section separator */
+    .generation-section {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .generation-section:last-child {
+      border-bottom: none;
+    }
+  </style>
 </head>
 <body>
-
 
   <section class="hero">
     <div class="hero-body">
       <div class="container is-max-desktop">
         <div class="columns is-centered">
           <div class="column has-text-centered">
-            <h1 class="title is-1 publication-title">Academic Project Page</h1>
+            <h1 class="title is-1 publication-title">Temporal Score Rescaling for Temperature Sampling in Diffusion and Flow Models</h1>
             <div class="is-size-5 publication-authors">
               <!-- Paper authors -->
               <span class="author-block">
-                <a href="FIRST AUTHOR PERSONAL LINK" target="_blank">First Author</a><sup>*</sup>,</span>
+                <a href="https://yanboxu.netlify.app/" target="_blank">Yanbo Xu</a><sup>*1</sup>,</span>
                 <span class="author-block">
-                  <a href="SECOND AUTHOR PERSONAL LINK" target="_blank">Second Author</a><sup>*</sup>,</span>
+                  <a href="https://lucas-707.github.io/" target="_blank">Yu Wu</a><sup>*1</sup>,</span>
                   <span class="author-block">
-                    <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Third Author</a>
+                    <a href="https://rureadyo.github.io/" target="_blank">Sungjae Park</a><sup>1</sup>,
+                  </span>
+                    <span class="author-block">
+                    <a href="https://www.zhiz.dev/" target="_blank">Zhizhou Zhou</a><sup>2</sup>,
+                  </span>
+                    <span class="author-block">
+                    <a href="https://shubhtuls.github.io/" target="_blank">Shubham Tulsiani</a><sup>1</sup>
                   </span>
                   </div>
 
                   <div class="is-size-5 publication-authors">
-                    <span class="author-block">Institution Name<br>Conferance name and year</span>
+                    <span class="author-block"><sup>1</sup>Carnegie Mellon University, <sup>2</sup>Stanford University<br></span>
                     <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span>
                   </div>
 
@@ -73,7 +291,7 @@
                     <div class="publication-links">
                          <!-- Arxiv PDF link -->
                       <span class="link-block">
-                        <a href="https://arxiv.org/pdf/<ARXIV PAPER ID>.pdf" target="_blank"
+                        <a href="https://arxiv.org/" target="_blank"
                         class="external-link button is-normal is-rounded is-dark">
                         <span class="icon">
                           <i class="fas fa-file-pdf"></i>
@@ -82,20 +300,9 @@
                       </a>
                     </span>
 
-                    <!-- Supplementary PDF link -->
-                    <span class="link-block">
-                      <a href="static/pdfs/supplementary_material.pdf" target="_blank"
-                      class="external-link button is-normal is-rounded is-dark">
-                      <span class="icon">
-                        <i class="fas fa-file-pdf"></i>
-                      </span>
-                      <span>Supplementary</span>
-                    </a>
-                  </span>
-
                   <!-- Github link -->
                   <span class="link-block">
-                    <a href="https://github.com/YOUR REPO HERE" target="_blank"
+                    <a href="https://arxiv.org/" target="_blank"
                     class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fab fa-github"></i>
@@ -106,7 +313,7 @@
 
                 <!-- ArXiv abstract Link -->
                 <span class="link-block">
-                  <a href="https://arxiv.org/abs/<ARXIV PAPER ID>" target="_blank"
+                  <a href="https://arxiv.org/" target="_blank"
                   class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                     <i class="ai ai-arxiv"></i>
@@ -122,24 +329,6 @@
   </div>
 </section>
 
-
-<!-- Teaser video-->
-<section class="hero teaser">
-  <div class="container is-max-desktop">
-    <div class="hero-body">
-      <video poster="" id="tree" autoplay controls muted loop height="100%">
-        <!-- Your video here -->
-        <source src="static/videos/banner_video.mp4"
-        type="video/mp4">
-      </video>
-      <h2 class="subtitle has-text-centered">
-        Aliquam vitae elit ullamcorper tellus egestas pellentesque. Ut lacus tellus, maximus vel lectus at, placerat pretium mi. Maecenas dignissim tincidunt vestibulum. Sed consequat hendrerit nisl ut maximus. 
-      </h2>
-    </div>
-  </div>
-</section>
-<!-- End teaser video -->
-
 <!-- Paper abstract -->
 <section class="section hero is-light">
   <div class="container is-max-desktop">
@@ -148,7 +337,10 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ullamcorper tellus sed ante aliquam tempus. Etiam porttitor urna feugiat nibh elementum, et tempor dolor mattis. Donec accumsan enim augue, a vulputate nisi sodales sit amet. Proin bibendum ex eget mauris cursus euismod nec et nibh. Maecenas ac gravida ante, nec cursus dui. Vivamus purus nibh, placerat ac purus eget, sagittis vestibulum metus. Sed vestibulum bibendum lectus gravida commodo. Pellentesque auctor leo vitae sagittis suscipit.
+            Score-based generative models, such as denoising diffusion or flow matching, have become ubiquitous across perception, generation, and interaction.
+            Given training data $\{\mathbf{x}^n\}$, they can model the underlying data distribution $p_{\theta}(\mathbf{x})$ (or $p(\mathbf{x}|\mathbf{c})$ for conditional settings) and at inference, then allow drawing samples $\mathbf{x} \sim p_{\theta}(\mathbf{x})$ e.g. to generate novel images.
+            However, in certain applications, we may not want to truly sample the original data distribution.
+            For example, when predicting depth from RGB input, we may want the more likely estimate(s) as output. In contrast, an artist exploring design choices may want the trained image generative model to yield more diverse samples even if they may be somewhat less likely in the data. In this work, we ask whether we can steer the sampling process of diffusion or flow matching models to output more likely (or conversely, more diverse) samples than the original training data.
           </p>
         </div>
       </div>
@@ -157,156 +349,964 @@
 </section>
 <!-- End paper abstract -->
 
+<!-- Main Content Section -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content">
 
-<!-- Image carousel -->
-<section class="hero is-small">
-  <div class="hero-body">
-    <div class="container">
-      <div id="results-carousel" class="carousel results-carousel">
-       <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel1.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-          First image description.
-        </h2>
+      <h2 class="title is-3">Diffusion and Flow Models</h2>
+      <p>
+        Diffusion and flow models both fall under the family of stochastic interpolant<sup>1</sup>, which converts samples from data distribution $\mathbf{x}_0 \sim p_0(\mathbf{x})$ to Gaussian noise $\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})$. The interpolant process can be defined as:
+      </p>
+
+      <div class="has-text-centered" style="margin: 2rem 0;">
+        $\mathbf{x}_t = \alpha_t \mathbf{x}_0 + \sigma_t \boldsymbol{\epsilon} \tag{1}$
       </div>
-      <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel2.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-          Second image description.
-        </h2>
+
+      <p>
+        Different noise schedules $\alpha_t, \sigma_t$ correspond to different formulations of stochastic interpolants. For example, for flow matching models it is common to set $\alpha_t=1-t, \ \sigma_t=t$, while for variance-preserving diffusion models they are defined such that $\alpha_t^2 + \sigma_t^2 = 1$.
+      </p>
+
+      <h2 class="title is-3">Temperature Scaling</h2>
+      <p>
+        The process of trading off sample likelihood and diversity at inference is commonly referred to as temperature sampling – a higher temperature leads to diverse samples, and a lower temperature leads to more likely ones. 
+        In the following, we explain two common approaches to steer the inference of diffusion or flow models, and discuss their limitations.
+      </p>
+
+      <h3 class="title is-4">Classifier Free Guidance</h3>
+      <p>
+        Classifier-Free Guidance (CFG) is a widely-used technique for controlling the trade-off between sample quality and diversity in both diffusion models and flow matching. The core idea is to interpolate between an unconditional model prediction and a conditional model prediction during sampling.
+      </p>
+
+      <p>
+        For any score-based or flow-based generative model, CFG modifies the predicted direction (whether it's a score, velocity, or flow field) as:
+      </p>
+
+      <div class="has-text-centered" style="margin: 2rem 0;">
+        $\tilde{\mathbf{v}}_t = \mathbf{v}_t(\mathbf{x}_t) + w \cdot (\mathbf{v}_t(\mathbf{x}_t | \mathbf{c}) - \mathbf{v}_t(\mathbf{x}_t))$
       </div>
-      <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel3.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-         Third image description.
-       </h2>
-     </div>
-     <div class="item">
-      <!-- Your image here -->
-      <img src="static/images/carousel4.jpg" alt="MY ALT TEXT"/>
-      <h2 class="subtitle has-text-centered">
-        Fourth image description.
-      </h2>
+
+      <p>
+        where $\mathbf{v}_t(\mathbf{x}_t | \mathbf{c})$ is the conditional prediction given context $\mathbf{c}$, $\mathbf{v}_t(\mathbf{x}_t)$ is the unconditional prediction, and $w$ is the guidance weight. When $w = 0$, we recover unconditional sampling; when $w > 0$, we push samples toward the conditional distribution, often improving quality at the cost of diversity.
+      </p>
+
+      <p>
+        While this allows one to trade off likelihood and diversity by controlling the effect of the conditioning on the drawn samples, <strong>it is fundamentally different from temperature scaling</strong>, which we show in the next section. 
+        Moreover, <strong>CFG cannot be applied to unconditional models and even for conditional ones, requires training with condition dropout.</strong>
+      </p>
+
+      <h3 class="title is-4">Constant Noise Scaling</h3>
+      <p>
+        Constant Noise Scaling (CNS) is perhaps the closest existing approach to our method in terms of being efficient and training-free. CNS scales the stochastic noise at each reverse sampling step in DDPM by a constant factor. From an SDE perspective, CNS solves the following reverse-time SDE:
+      </p>
+      
+      <div class="has-text-centered" style="margin: 2rem 0;">
+        $d\mathbf{x} = [f(\mathbf{x},t) - g(t)^2 \nabla \log p_t(\mathbf{x})]dt + \frac{g(t)}{\sqrt{k}}d\bar{w}$
+      </div>
+      
+      <p>
+        where compared to the regular reverse-time SDE, the noise term is scaled by the constant factor $\frac{1}{\sqrt{k}}$. 
+        Intuitively, a larger $k$ reduces the noise injected at each step, leading to samples that are more likely under the model distribution, while a smaller $k$ increases the noise, promoting diversity.
+        While CNS is widely used to control sample variance and improve quality, it <strong>only applies to stochastic samplers</strong> and <strong>a fixed scaling factor over sampling horizon often leads to impaired distribution and mode dropping.</strong>
+      </p>
+
     </div>
   </div>
-</div>
-</div>
 </section>
-<!-- End image carousel -->
 
+<!-- Illustrative Example Section -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="content">
+      
+      <h2 class="title is-3">Illustrative Example</h2>
+      
+      <p>
+        To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a simple isotropic Gaussian mixture as a data distribution. 
+        We use the analytical score function of the GMM for all methods, for both conditional and unconditional generation. 
+        Intuitively, we would want the sampled distribution to preserve the global structure of the data distribution, while adjusting the "sharpness" of each mode to control sample likelihood and diversity.
+      </p>
 
+      <!-- Interactive Controls for Static Figures -->
+      <div class="interactive-viz-container">
 
-
-<!-- Youtube video -->
-<section class="hero is-small is-light">
-  <div class="hero-body">
-    <div class="container">
-      <!-- Paper video. -->
-      <h2 class="title is-3">Video Presentation</h2>
-      <div class="columns is-centered has-text-centered">
-        <div class="column is-four-fifths">
+        <!-- Unconditional Generation Section -->
+        <div class="generation-section">
+          <h3 class="title is-4">Unconditional Generation</h3>
           
-          <div class="publication-video">
-            <!-- Youtube embed code here -->
-            <iframe src="https://www.youtube.com/embed/JkaxUblCGz0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <!-- Method Selection Buttons for Unconditional -->
+          <div class="control-group">
+            <div class="method-control-buttons">
+              <button onclick="toggleMethod('ddpm', 'unconditional')" id="ddpm-unconditional-btn" 
+                      style="background-color: #2563eb; color: white;">
+                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
+                DDPM
+              </button>
+              <button onclick="toggleMethod('cns', 'unconditional')" id="cns-unconditional-btn" 
+                      style="background-color: #059669; color: white;">
+                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
+                CNS
+              </button>
+              <button onclick="toggleMethod('tsr', 'unconditional')" id="tsr-unconditional-btn" 
+                      style="background-color: #7c3aed; color: white;">
+                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
+                TSR (Ours)
+              </button>
+              <button onclick="showAllMethods('unconditional')" 
+                      style="background-color: #4b5563; color: white;">
+                Show All
+              </button>
+              <button onclick="hideAllMethods('unconditional')" 
+                      style="background-color: #9ca3af; color: white;">
+                Hide All
+              </button>
+            </div>
+          </div>
+          
+          <!-- Unconditional Generation Plots -->
+          <div class="method-grid" id="unconditional-grid">
+            <div class="method-plot ddpm-plot unconditional-plot" id="ddpm-unconditional">
+              <div class="image-container">
+                <img src="static/images/ddpm.png" alt="DDPM - Unconditional">
+              </div>
+              <p><strong>DDPM</strong></p>
+            </div>
+            <div class="method-plot cns-plot unconditional-plot" id="cns-unconditional">
+              <div class="image-container">
+                <img src="static/images/cns.png" alt="CNS - Unconditional">
+              </div>
+              <p><strong>+Constant Noise Scaling</strong></p>
+            </div>
+            <div class="method-plot tsr-plot unconditional-plot" id="tsr-unconditional">
+              <div class="image-container">
+                <img src="static/images/tsr.png" alt="TSR - Unconditional">
+              </div>
+              <p><strong>+Temporal Score Rescaling</strong></p>
+            </div>
           </div>
         </div>
+
+        <!-- Conditional Generation Section -->
+        <div class="generation-section">
+          <h3 class="title is-4">Conditional Generation</h3>
+          
+          <!-- Method Selection Buttons for Conditional -->
+          <div class="control-group">
+            <div class="method-control-buttons">
+              <button onclick="toggleMethod('ddpm', 'conditional')" id="ddpm-conditional-btn" 
+                      style="background-color: #2563eb; color: white;">
+                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
+                DDPM
+              </button>
+              <button onclick="toggleMethod('cns', 'conditional')" id="cns-conditional-btn" 
+                      style="background-color: #059669; color: white;">
+                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
+                CNS
+              </button>
+              <button onclick="toggleMethod('tsr', 'conditional')" id="tsr-conditional-btn" 
+                      style="background-color: #7c3aed; color: white;">
+                <span style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></span>
+                TSR (Ours)
+              </button>
+              <button onclick="showAllMethods('conditional')" 
+                      style="background-color: #4b5563; color: white;">
+                Show All
+              </button>
+              <button onclick="hideAllMethods('conditional')" 
+                      style="background-color: #9ca3af; color: white;">
+                Hide All
+              </button>
+            </div>
+          </div>
+          
+          <!-- Conditional Generation Plots -->
+          <div class="method-grid" id="conditional-grid">
+            <div class="method-plot ddpm-plot conditional-plot" id="ddpm-conditional">
+              <div class="image-container">
+                <img src="static/images/ddpm_cfg.png" alt="DDPM - Conditional">
+              </div>
+              <p><strong>+Classifier Free Guidance</strong></p>
+            </div>
+            <div class="method-plot cns-plot conditional-plot" id="cns-conditional">
+              <div class="image-container">
+                <img src="static/images/cns_cond.png" alt="CNS - Conditional">
+              </div>
+              <p><strong>+Constant Noise Scaling</strong></p>
+            </div>
+            <div class="method-plot tsr-plot conditional-plot" id="tsr-conditional">
+              <div class="image-container">
+                <img src="static/images/tsr_cond.png" alt="TSR - Conditional">
+              </div>
+              <p><strong>+Temporal Score Rescaling</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <p><strong>Figure:</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
+          The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
+          Our TSR method shows improved control over the sampling process compared to baseline methods.</p>
+        </div>
       </div>
+
+      <p>
+        In contrast, our proposed Temporal Score Rescaling (TSR) uses a time-dependent scaling schedule that preserves the global structure of the sampled distribution and is compatible with both deterministic and stochastic samplers, addressing these fundamental limitations of CNS.
+      </p>
+
     </div>
   </div>
 </section>
-<!-- End youtube video -->
 
+<!-- Interactive Visualization Section -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content">
+      
+      <h2 class="title is-3">Interactive Flow Matching Visualization</h2>
 
-<!-- Video carousel -->
-<section class="hero is-small">
-  <div class="hero-body">
-    <div class="container">
-      <h2 class="title is-3">Another Carousel</h2>
-      <div id="results-carousel" class="carousel results-carousel">
-        <div class="item item-video1">
-          <video poster="" id="video1" autoplay controls muted loop height="100%">
-            <!-- Your video file here -->
-            <source src="static/videos/carousel1.mp4"
-            type="video/mp4">
-          </video>
-        </div>
-        <div class="item item-video2">
-          <video poster="" id="video2" autoplay controls muted loop height="100%">
-            <!-- Your video file here -->
-            <source src="static/videos/carousel2.mp4"
-            type="video/mp4">
-          </video>
-        </div>
-        <div class="item item-video3">
-          <video poster="" id="video3" autoplay controls muted loop height="100%">\
-            <!-- Your video file here -->
-            <source src="static/videos/carousel3.mp4"
-            type="video/mp4">
-          </video>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<!-- End video carousel -->
-
-
-
-
-
-
-<!-- Paper poster -->
-<section class="hero is-small is-light">
-  <div class="hero-body">
-    <div class="container">
-      <h2 class="title">Poster</h2>
-
-      <iframe  src="static/pdfs/sample.pdf" width="100%" height="550">
-          </iframe>
+      <div class="interactive-viz-container">
+        <h3 class="title is-4">Interactive Flow Matching Visualization</h3>
         
-      </div>
-    </div>
-  </section>
-<!--End paper poster -->
+        <!-- Prediction Type Selection -->
+        <div class="control-group">
+          <label class="control-label">Prediction Type:</label>
+          <div class="button-group">
+            <button onclick="setPredType('v')" id="v-btn" style="background-color: #e5e7eb; color: #374151;">
+              Diffusion 
+            </button>
+            <button onclick="setPredType('flow')" id="flow-btn" style="background-color: #2563eb; color: white;">
+              Flow
+            </button>
+          </div>
+        </div>
 
+        <!-- K Parameter Buttons -->
+        <div class="control-group">
+          <label class="control-label">
+            Parameter (K): <span id="k-value" style="color: #2563eb; font-family: monospace;">10.0</span>
+          </label>
+          <div class="button-group" id="k-buttons">
+            <button onclick="setK(1.0)" style="background-color: #e5e7eb; color: #374151;">1.0</button>
+            <button onclick="setK(2.0)" style="background-color: #e5e7eb; color: #374151;">2.0</button>
+            <button onclick="setK(5.0)" style="background-color: #e5e7eb; color: #374151;">5.0</button>
+            <button onclick="setK(10.0)" style="background-color: #2563eb; color: white;">10.0</button>
+          </div>
+        </div>
+
+        <!-- Single Plotly Chart with Subplots -->
+        <div id="plotly-chart">
+          <!-- Loading spinner -->
+          <div id="loading-spinner">
+            <svg style="width: 2.5rem; height: 2.5rem; color: #2563eb;" class="animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">Loading visualization data...</p>
+          </div>
+        </div>
+        
+        <!-- Time Slider -->
+        <div class="time-control">
+          <label class="control-label">
+            Time (T): <span id="t-value" style="color: #2563eb; font-family: monospace;">1.0</span>
+          </label>
+          <input type="range" id="t-slider" min="0" max="1" step="0.01" value="0" class="slider">
+        </div>
+        
+        <!-- Play/Pause Button -->
+        <div class="play-control">
+          <button onclick="toggleAnimation()" id="play-btn">
+            <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Play Animation
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
 
 <!--BibTex citation -->
-  <section class="section" id="BibTeX">
-    <div class="container is-max-desktop content">
-      <h2 class="title">BibTeX</h2>
-      <pre><code>BibTex Code Here</code></pre>
-    </div>
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{xu2025temporal,
+  title={Temporal Score Rescaling for Temperature Sampling in Diffusion and Flow Models},
+  author={Xu, Yanbo and Wu, Yu and Park, Sungjae and Zhou, Zhizhou and Tulsiani, Shubham},
+  year={2025}
+}</code></pre>
+  </div>
 </section>
 <!--End BibTex citation -->
 
-
-  <footer class="footer">
+<footer class="footer">
   <div class="container">
     <div class="columns is-centered">
       <div class="column is-8">
         <div class="content">
-
           <p>
-            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
             You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
             Commons Attribution-ShareAlike 4.0 International License</a>.
           </p>
-
         </div>
       </div>
     </div>
   </div>
 </footer>
 
-<!-- Statcounter tracking code -->
-  
-<!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
+<script>
+  // Static plots control variables - now separate for unconditional and conditional
+  let visibleMethodsUnconditional = new Set(['ddpm', 'cns', 'tsr']); // All visible by default
+  let visibleMethodsConditional = new Set(['ddpm', 'cns', 'tsr']); // All visible by default
 
-    <!-- End of Statcounter Code -->
+  // Toggle method visibility for specific generation type
+  function toggleMethod(method, generationType) {
+    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
+    
+    if (visibleMethods.has(method)) {
+      visibleMethods.delete(method);
+    } else {
+      visibleMethods.add(method);
+    }
+    updatePlotVisibility(generationType);
+    updateButtonStates(generationType);
+  }
 
-  </body>
-  </html>
+  // Show all methods for specific generation type
+  function showAllMethods(generationType) {
+    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
+    visibleMethods.clear();
+    visibleMethods.add('ddpm');
+    visibleMethods.add('cns');
+    visibleMethods.add('tsr');
+    updatePlotVisibility(generationType);
+    updateButtonStates(generationType);
+  }
+
+  // Hide all methods for specific generation type
+  function hideAllMethods(generationType) {
+    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
+    visibleMethods.clear();
+    updatePlotVisibility(generationType);
+    updateButtonStates(generationType);
+  }
+
+  // Update plot visibility for specific generation type
+  function updatePlotVisibility(generationType) {
+    const methods = ['ddpm', 'cns', 'tsr'];
+    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
+    
+    methods.forEach(method => {
+      const plots = document.querySelectorAll(`.${method}-plot.${generationType}-plot`);
+      plots.forEach(plot => {
+        if (visibleMethods.has(method)) {
+          plot.classList.remove('hidden');
+        } else {
+          plot.classList.add('hidden');
+        }
+      });
+    });
+
+    // Update grid layout to adapt to visible plots
+    const gridId = `${generationType}-grid`;
+    const grid = document.getElementById(gridId);
+    if (grid) {
+      const visibleCount = visibleMethods.size;
+      if (visibleCount === 0) {
+        grid.style.display = 'none';
+      } else {
+        grid.style.display = 'grid';
+        // Dynamically adjust grid columns based on visible plots
+        if (visibleCount === 1) {
+          grid.style.gridTemplateColumns = '1fr';
+        } else if (visibleCount === 2) {
+          grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        } else {
+          grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        }
+      }
+    }
+  }
+
+  // Update button states for specific generation type
+  function updateButtonStates(generationType) {
+    const methods = ['ddpm', 'cns', 'tsr']; // Fixed typo: was 'ddmp'
+    const colors = {
+      'ddpm': '#2563eb',
+      'cns': '#059669', 
+      'tsr': '#7c3aed'
+    };
+    const visibleMethods = generationType === 'unconditional' ? visibleMethodsUnconditional : visibleMethodsConditional;
+
+    methods.forEach(method => {
+      const btn = document.getElementById(`${method}-${generationType}-btn`);
+      const color = colors[method];
+      
+      if (btn) {
+        if (visibleMethods.has(method)) {
+          // Active state
+          btn.style.backgroundColor = color;
+          btn.style.color = 'white';
+          const span = btn.querySelector('span');
+          if (span) span.style.opacity = '0.9';
+        } else {
+          // Inactive state
+          btn.style.backgroundColor = '#d1d5db';
+          btn.style.color = '#6b7280';
+          const span = btn.querySelector('span');
+          if (span) span.style.opacity = '0.5';
+        }
+      }
+    });
+  }
+
+  // Interactive visualization variables
+  let currentPredType = 'flow'; // 'v' for diffusion, 'flow' for flow
+  let animationId = null;
+  let isPlaying = false;
+  let flowData = null;
+  let dataLoaded = false;
+  let availableKValues = [1.0, 2.0, 5.0, 10.0]; // Default k values
+
+  // Load flow data from JSON file
+  async function loadFlowData() {
+    try {
+      const response = await fetch('flow_data_compressed.json');
+      if (!response.ok) {
+        throw new Error('Failed to load flow data');
+      }
+      const data = await response.json();
+      
+      // Check if data has metadata structure
+      if (data.metadata && data.samples) {
+        flowData = data.samples;
+        // Extract available k values from metadata
+        if (data.metadata.k_values) {
+          availableKValues = data.metadata.k_values;
+          updateKSlider();
+        }
+      } else {
+        flowData = data;
+      }
+      
+      dataLoaded = true;
+      console.log('Flow data loaded successfully');
+      console.log('Available K values:', availableKValues);
+      
+      // Update UI to show available methods
+      updateAllPlots();
+      
+      // Hide loading spinner after plot is rendered
+      setTimeout(() => {
+        const spinner = document.getElementById('loading-spinner');
+        if (spinner) {
+          spinner.style.display = 'none';
+        }
+      }, 100);
+    } catch (error) {
+      console.warn('Could not load flow data, using generated data:', error);
+      dataLoaded = false;
+      
+      // Hide spinner and show error or use generated data
+      const spinner = document.getElementById('loading-spinner');
+      if (spinner) {
+        spinner.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center;">
+            <svg style="height: 2.5rem; width: 2.5rem; color: #d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">Using generated demo data</p>
+          </div>
+        `;
+        // Hide after a moment
+        setTimeout(() => {
+          spinner.style.display = 'none';
+          updateAllPlots(); // Still render with generated data
+        }, 2000);
+      }
+    }
+  }
+
+  // Update K buttons to only show available values
+  function updateKSlider() {
+    const kValue = document.getElementById('k-value');
+    const kButtons = document.getElementById('k-buttons');
+    
+    // Keep the initial value at 10.0 if it's available, otherwise use the last (highest) value
+    const initialK = availableKValues.includes(10.0) ? 10.0 : availableKValues[availableKValues.length - 1];
+    kValue.textContent = initialK.toFixed(1);
+    
+    // Update k buttons based on available values
+    kButtons.innerHTML = '';
+    availableKValues.forEach((k, index) => {
+      const button = document.createElement('button');
+      button.onclick = () => setK(k);
+      button.textContent = k.toFixed(1);
+      button.id = `k-btn-${k.toFixed(1)}`; // Make sure ID matches what setK is looking for
+      
+      // Set initial styles based on whether it's selected
+      if (k === initialK) {
+        button.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+      } else {
+        button.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+      }
+      
+      kButtons.appendChild(button);
+    });
+  }
+
+  // Set K value and update UI
+  function setK(value) {
+    const kValue = document.getElementById('k-value');
+    kValue.textContent = value.toFixed(1);
+    
+    // Force update button styles with setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      availableKValues.forEach(k => {
+        const btnId = `k-btn-${k.toFixed(1)}`;
+        const btn = document.getElementById(btnId);
+        
+        if (btn) {
+          if (k === value) {
+            btn.style.cssText = 'background-color: #2563eb !important; color: #ffffff !important; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none !important; cursor: pointer;';
+            btn.setAttribute('data-selected', 'true');
+          } else {
+            btn.style.cssText = 'background-color: #e5e7eb !important; color: #374151 !important; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none !important; cursor: pointer;';
+            btn.setAttribute('data-selected', 'false');
+          }
+        }
+      });
+    }, 10);
+    
+    updateAllPlots();
+  }
+
+  // Snap k value to nearest available value
+  function snapToNearestK(value) {
+    let nearest = availableKValues[0];
+    let minDiff = Math.abs(value - availableKValues[0]);
+    
+    for (const k of availableKValues) {
+      const diff = Math.abs(value - k);
+      if (diff < minDiff) {
+        minDiff = diff;
+        nearest = k;
+      }
+    }
+    
+    return nearest;
+  }
+
+  // Get the methods for current prediction type
+  function getMethodsForPredType() {
+    if (currentPredType === 'v') {
+      return [
+        { value: 'ground_truth', title: 'Ground Truth' },
+        { value: 'v_ddpm', title: 'DDPM' },
+        { value: 'v_cns', title: 'CNS' },
+        { value: 'v_tsr', title: 'TSR' }
+      ];
+    } else {
+      return [
+        { value: 'ground_truth', title: 'Ground Truth' },
+        { value: 'flow_flow_ode', title: 'Flow-ODE' },
+        { value: 'flow_flow_nns_sde', title: 'Flow-NNS-SDE' },
+        { value: 'flow_flow_psr_ode', title: 'Flow-PSR-ODE' }
+      ];
+    }
+  }
+
+  // Get data from loaded JSON or generate if not available
+  function getData(pattern, t, k, method) {
+    if (!dataLoaded || !flowData) {
+      return generateData(pattern, t, k, method);
+    }
+    
+    // Handle ground truth specially
+    if (method === 'ground_truth') {
+      const key = `${pattern}_ground_truth_k=1.0`;
+      if (flowData[key]) {
+        const timeData = flowData[key];
+        // Ground truth is the same at all times, just use any time point
+        const timeStr = "0.00";
+        const pointData = timeData[timeStr];
+        
+        if (pointData) {
+          // Handle compact format {"x": [...], "y": [...]}
+          if (pointData.x && pointData.y) {
+            return { x: pointData.x, y: pointData.y };
+          }
+          
+          // Handle regular format [[x, y], ...]
+          if (Array.isArray(pointData) && pointData.length > 0) {
+            const x = pointData.map(p => p[0]);
+            const y = pointData.map(p => p[1]);
+            return { x, y };
+          }
+        }
+      }
+      return generateData(pattern, t, k, method);
+    }
+    
+    // Snap k to nearest available value
+    const actualK = snapToNearestK(k);
+    
+    // Parse method string to extract pred_type and actual method name
+    // Method format from dropdown: "flow_flow_ode" or "v_ddpm"
+    let pred_type, methodName;
+    
+    if (method.startsWith('flow_')) {
+      pred_type = 'flow';
+      methodName = method.substring(5); // Remove "flow_" prefix
+    } else if (method.startsWith('v_')) {
+      pred_type = 'v';
+      methodName = method.substring(2); // Remove "v_" prefix
+    } else {
+      // Fallback parsing
+      const parts = method.split('_');
+      pred_type = parts[0];
+      methodName = parts.slice(1).join('_');
+    }
+    
+    // For base methods (ddpm, flow_ode), always use k=1.0
+    // But for NNS and PSR methods, use the actual k value
+    const isBaseMethod = (methodName === 'ddpm' || methodName === 'flow_ode');
+    const effectiveK = isBaseMethod ? 1.0 : actualK;
+    
+    // Check if this k value exists in our data
+    if (!availableKValues.includes(effectiveK)) {
+      console.warn(`K value ${effectiveK} not available, using closest: ${snapToNearestK(effectiveK)}`);
+      return generateData(pattern, t, k, method);
+    }
+    
+    const key = `${pattern}_${pred_type}_${methodName}_k=${effectiveK.toFixed(1)}`;
+    console.log(`Looking for key: ${key}`);
+    
+    if (!flowData[key]) {
+      console.warn(`Data not found for key: ${key}, using generated data`);
+      return generateData(pattern, t, k, method);
+    }
+    
+    const timeData = flowData[key];
+    
+    // Find exact or closest time point
+    const timeStr = t.toFixed(2);
+    let selectedTime = timeStr;
+    
+    if (!timeData[timeStr]) {
+      // Find the closest available time
+      const availableTimes = Object.keys(timeData).map(parseFloat);
+      let minDiff = Infinity;
+      
+      availableTimes.forEach(availTime => {
+        const diff = Math.abs(availTime - t);
+        if (diff < minDiff) {
+          minDiff = diff;
+          selectedTime = availTime.toFixed(2);
+        }
+      });
+    }
+    
+    const pointData = timeData[selectedTime];
+    
+    if (!pointData) {
+      console.warn(`No data for time ${selectedTime} in ${key}`);
+      return generateData(pattern, t, k, method);
+    }
+    
+    // Handle compact format {"x": [...], "y": [...]}
+    if (pointData.x && pointData.y) {
+      return { x: pointData.x, y: pointData.y };
+    }
+    
+    // Handle regular format [[x, y], ...]
+    if (Array.isArray(pointData) && pointData.length > 0) {
+      const x = pointData.map(p => p[0]);
+      const y = pointData.map(p => p[1]);
+      return { x, y };
+    }
+    
+    return generateData(pattern, t, k, method);
+  }
+
+  // Fallback: Generate data based on pattern type
+  function generateData(pattern, t, k, method) {
+    const n = 300;
+    let x = [];
+    let y = [];
+    
+    if (pattern === 'checkerboard') {
+      // Generate checkerboard pattern
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          if ((i + j) % 2 === 0) {
+            for (let p = 0; p < n/32; p++) {
+              const noise = t * 0.3;  // More noise as t increases (toward noise state)
+              const centerX = i * 0.125 + 0.0625;
+              const centerY = j * 0.125 + 0.0625;
+              
+              // Apply different transformations based on method
+              let dx = (Math.random() - 0.5) * 0.05;
+              let dy = (Math.random() - 0.5) * 0.05;
+              
+              if (method.includes('cns') || method.includes('nns')) {
+                // More diffusion for these methods
+                dx *= (1 + t * k * 2);
+                dy *= (1 + t * k * 2);
+              } else if (method.includes('tsr') || method.includes('psr')) {
+                // Tighter clustering for these methods
+                dx *= Math.max(0.1, 1 - t * 0.5);
+                dy *= Math.max(0.1, 1 - t * 0.5);
+              }
+              
+              x.push(centerX + dx + (Math.random() - 0.5) * noise);
+              y.push(centerY + dy + (Math.random() - 0.5) * noise);
+            }
+          }
+        }
+      }
+    } else if (pattern === 'swissroll') {
+      // Generate swiss roll pattern
+      for (let i = 0; i < n; i++) {
+        const theta = i / n * 3 * Math.PI;
+        const r = 0.1 + theta / (3 * Math.PI) * 0.3;
+        const noise = t * 0.1 * k;  // More noise as t increases
+        
+        // Apply spiral transformation
+        let px = 0.5 + r * Math.cos(theta) * (1 - t * 0.3);
+        let py = 0.5 + r * Math.sin(theta) * (1 - t * 0.3);
+        
+        // Add method-specific variations
+        if (method.includes('cns') || method.includes('nns')) {
+          px += (Math.random() - 0.5) * noise * 2;
+          py += (Math.random() - 0.5) * noise * 2;
+        } else {
+          px += (Math.random() - 0.5) * noise;
+          py += (Math.random() - 0.5) * noise;
+        }
+        
+        x.push(px);
+        y.push(py);
+      }
+    }
+    
+    return { x, y };
+  }
+
+  // Update all subplots in a single figure
+  function updateAllPlots() {
+    const sliderValue = parseFloat(document.getElementById('t-slider').value);
+    const t = 1.0 - sliderValue;  // Invert: slider 0 = T=1.0, slider 1 = T=0.0
+    const k = parseFloat(document.getElementById('k-value').textContent);
+    
+    document.getElementById('t-value').textContent = t.toFixed(2);
+    document.getElementById('k-value').textContent = k.toFixed(1);
+    
+    const methods = getMethodsForPredType();
+    const traces = [];
+    
+    // Create traces for all 8 subplots
+    // Top row - Swiss Roll
+    for (let i = 0; i < 4; i++) {
+      const data = getData('swissroll', t, k, methods[i].value);
+      traces.push({
+        x: data.x,
+        y: data.y,
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+          size: 2,
+          color: 'rgb(59, 130, 246)',
+          opacity: 0.6
+        },
+        showlegend: false,
+        xaxis: `x${i === 0 ? '' : i + 1}`,
+        yaxis: `y${i === 0 ? '' : i + 1}`
+      });
+    }
+    
+    // Bottom row - Checkerboard
+    for (let i = 0; i < 4; i++) {
+      const data = getData('checkerboard', t, k, methods[i].value);
+      traces.push({
+        x: data.x,
+        y: data.y,
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+          size: 2,
+          color: 'rgb(59, 130, 246)',
+          opacity: 0.6
+        },
+        showlegend: false,
+        xaxis: `x${i + 5}`,
+        yaxis: `y${i + 5}`
+      });
+    }
+    
+    // Create subplot layout
+    const layout = {
+      grid: { rows: 2, columns: 4, pattern: 'independent' },
+      paper_bgcolor: 'white',
+      plot_bgcolor: 'white',
+      margin: { t: 40, r: 20, b: 30, l: 20 },
+      hovermode: false,
+      annotations: []
+    };
+    
+    // Add titles for top row
+    for (let i = 0; i < 4; i++) {
+      layout.annotations.push({
+        text: methods[i].title,
+        xref: 'paper',
+        yref: 'paper',
+        x: (i * 0.25) + 0.125,
+        y: 1.02,
+        xanchor: 'center',
+        yanchor: 'bottom',
+        showarrow: false,
+        font: { size: 11 }
+      });
+    }
+    
+    // Add row labels
+    layout.annotations.push({
+      text: 'Swiss Roll',
+      xref: 'paper',
+      yref: 'paper',
+      x: -0.02,
+      y: 0.75,
+      xanchor: 'right',
+      yanchor: 'middle',
+      showarrow: false,
+      font: { size: 10 },
+      textangle: -90
+    });
+    
+    layout.annotations.push({
+      text: 'Checkerboard',
+      xref: 'paper',
+      yref: 'paper',
+      x: -0.02,
+      y: 0.25,
+      xanchor: 'right',
+      yanchor: 'middle',
+      showarrow: false,
+      font: { size: 10 },
+      textangle: -90
+    });
+    
+    // Configure all axes
+    for (let i = 1; i <= 8; i++) {
+      const xaxis = i === 1 ? 'xaxis' : `xaxis${i}`;
+      const yaxis = i === 1 ? 'yaxis' : `yaxis${i}`;
+      
+      layout[xaxis] = {
+        range: [-1, 1],
+        showgrid: false,
+        showticklabels: false,
+        zeroline: false
+      };
+      
+      layout[yaxis] = {
+        range: [-1, 1],
+        showgrid: false,
+        showticklabels: false,
+        zeroline: false
+      };
+    }
+    
+    const config = {
+      displayModeBar: false,
+      responsive: true
+    };
+    
+    Plotly.newPlot('plotly-chart', traces, layout, config);
+  }
+
+  // Set prediction type
+  function setPredType(predType) {
+    currentPredType = predType;
+    
+    // Update button styles
+    const vBtn = document.getElementById('v-btn');
+    const flowBtn = document.getElementById('flow-btn');
+    
+    if (predType === 'v') {
+      vBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+      flowBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    } else {
+      vBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+      flowBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    }
+    
+    // Update plots
+    updateAllPlots();
+  }
+
+  // Animation functions
+  function animate() {
+    const slider = document.getElementById('t-slider');
+    let value = parseFloat(slider.value);
+    
+    // Convert slider value to time for step size calculation
+    const t = 1.0 - value; // Current time value
+    
+    // Variable step size - smaller steps as we approach data (T=0) for smoother animation
+    const stepSize = t > 0.5 ? 0.04 : 0.02;
+    
+    value += stepSize; // Increase slider value to go from T=1.0 to T=0.0
+    
+    // Ensure we snap to discrete values
+    value = Math.round(value * 100) / 100; // Round to nearest 0.01
+    
+    if (value >= 1) {
+      // Stop at slider=1 (T=0.0, clean data)
+      value = 1;
+      slider.value = value;
+      updateAllPlots();
+      
+      // Stop the animation
+      isPlaying = false;
+      const btn = document.getElementById('play-btn');
+      btn.innerHTML = `
+        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Play Animation
+      `;
+      btn.style.backgroundColor = '#10b981';
+      if (animationId) {
+        clearTimeout(animationId);
+      }
+    }
+  }
+
+  // Event listeners
+  document.getElementById('t-slider').addEventListener('input', function() {
+    const sliderValue = parseFloat(this.value);
+    
+    // Update displayed T value (convert from slider to time)
+    const t = 1.0 - sliderValue;
+    document.getElementById('t-value').textContent = t.toFixed(2);
+    
+    updateAllPlots();
+  });
+
+  // Initialize - load data first, then plot
+  window.addEventListener('DOMContentLoaded', () => {
+    loadFlowData();
+    // Initialize static plot visibility for both generation types
+    updatePlotVisibility('unconditional');
+    updatePlotVisibility('conditional');
+    updateButtonStates('unconditional');
+    updateButtonStates('conditional');
+  });
+</script>
+
+</body>
+</html>
