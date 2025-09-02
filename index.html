@@ -267,6 +267,14 @@
       background: #059669;
     }
 
+    /* Performance stats styling */
+    .performance-stats {
+      font-size: 0.75rem;
+      color: #6b7280;
+      text-align: right;
+      margin-top: 0.5rem;
+    }
+
     /* Section separator */
     .generation-section {
       margin-bottom: 3rem;
@@ -515,7 +523,7 @@
             <div class="image-container">
               <img src="static/images/tsr_cond.png" alt="TSR Conditional Generation">
             </div>
-            <h4 class="subtitle is-5">DDPM+TSR (Ours)</h4>
+            <h4 class="subtitle is-5">DDMP+TSR (Ours)</h4>
           </div>
           <div class="method-plot" id="conditional-ddpm">
             <div class="image-container">
@@ -656,6 +664,10 @@ document.addEventListener('DOMContentLoaded', function() {
             Play Animation
           </button>
         </div>
+        
+        <div class="performance-stats" id="perf-stats">
+          Render time: -- | FPS: --
+        </div>
       </div>
 
     </div>
@@ -692,612 +704,579 @@ document.addEventListener('DOMContentLoaded', function() {
 </footer>
 
 <script>
-  // Interactive visualization variables
-  let currentPredType = 'flow'; // 'v' for diffusion, 'flow' for flow
-  let animationId = null;
-  let isPlaying = false;
-  let flowData = null;
-  let dataLoaded = false;
-  let availableKValues = [1.0, 2.0, 5.0, 10.0]; // Default k values
+// Performance optimizations
+let currentPredType = 'flow';
+let animationId = null;
+let isPlaying = false;
+let dataCache = new Map(); // Cache for generated data
+let plotInitialized = false;
+let lastRenderTime = 0;
+let frameCount = 0;
+let fpsInterval = null;
+let flowData = null;
+let dataLoaded = false;
+let availableKValues = [1.0, 2.0, 5.0, 10.0];
 
-  // Load flow data from JSON file
-  async function loadFlowData() {
-    try {
-      const response = await fetch('flow_data_compressed.json');
-      if (!response.ok) {
-        throw new Error('Failed to load flow data');
+// Load flow data from JSON file with optimized error handling
+async function loadFlowData() {
+  try {
+    const response = await fetch('flow_data_compressed.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load flow data: ${response.status}`);
+    }
+    const data = await response.json();
+    
+    // Check if data has metadata structure
+    if (data.metadata && data.samples) {
+      flowData = data.samples;
+      // Extract available k values from metadata
+      if (data.metadata.k_values) {
+        availableKValues = data.metadata.k_values;
+        updateKButtons();
       }
-      const data = await response.json();
-      
-      // Check if data has metadata structure
-      if (data.metadata && data.samples) {
-        flowData = data.samples;
-        // Extract available k values from metadata
-        if (data.metadata.k_values) {
-          availableKValues = data.metadata.k_values;
-          updateKSlider();
-        }
-      } else {
-        flowData = data;
-      }
-      
-      dataLoaded = true;
-      console.log('Flow data loaded successfully');
-      console.log('Available K values:', availableKValues);
-      console.log('Sample keys:', Object.keys(flowData).slice(0, 5));
-      
-      // Update UI to show available methods
-      updateAllPlots();
-      
-      // Hide loading spinner after plot is rendered
+    } else {
+      flowData = data;
+    }
+    
+    dataLoaded = true;
+    console.log('Flow data loaded successfully');
+    console.log('Available K values:', availableKValues);
+    
+    // Clear cache and reinitialize
+    dataCache.clear();
+    plotInitialized = false;
+    updateAllPlotsOptimized();
+    
+    // Hide loading spinner
+    const spinner = document.getElementById('loading-spinner');
+    if (spinner) {
+      spinner.style.display = 'none';
+    }
+  } catch (error) {
+    console.warn('Could not load flow data, using generated data:', error);
+    dataLoaded = false;
+    
+    // Hide spinner and show fallback message
+    const spinner = document.getElementById('loading-spinner');
+    if (spinner) {
+      spinner.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <svg style="height: 2rem; width: 2rem; color: #d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">Using demo data</p>
+        </div>
+      `;
       setTimeout(() => {
-        const spinner = document.getElementById('loading-spinner');
-        if (spinner) {
-          spinner.style.display = 'none';
-        }
-      }, 100);
-    } catch (error) {
-      console.warn('Could not load flow data, using generated data:', error);
-      dataLoaded = false;
-      
-      // Hide spinner and show error or use generated data
-      const spinner = document.getElementById('loading-spinner');
-      if (spinner) {
-        spinner.innerHTML = `
-          <div style="display: flex; flex-direction: column; align-items: center;">
-            <svg style="height: 2.5rem; width: 2.5rem; color: #d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">Using generated demo data</p>
-          </div>
-        `;
-        // Hide after a moment
-        setTimeout(() => {
-          spinner.style.display = 'none';
-          updateAllPlots(); // Still render with generated data
-        }, 2000);
-      }
+        spinner.style.display = 'none';
+        updateAllPlotsOptimized();
+      }, 1500);
     }
   }
+}
 
-  // Update K buttons to only show available values
-  function updateKSlider() {
-    const kValue = document.getElementById('k-value');
-    const kButtons = document.getElementById('k-buttons');
+// Update K buttons based on available data
+function updateKButtons() {
+  const kValue = document.getElementById('k-value');
+  const kButtons = document.getElementById('k-buttons');
+  
+  const initialK = availableKValues.includes(10.0) ? 10.0 : availableKValues[availableKValues.length - 1];
+  kValue.textContent = initialK.toFixed(1);
+  
+  kButtons.innerHTML = '';
+  availableKValues.forEach(k => {
+    const button = document.createElement('button');
+    button.onclick = () => setK(k);
+    button.textContent = k.toFixed(1);
+    button.id = `k-btn-${k.toFixed(1)}`;
     
-    // Keep the initial value at 10.0 if it's available, otherwise use the last (highest) value
-    const initialK = availableKValues.includes(10.0) ? 10.0 : availableKValues[availableKValues.length - 1];
-    kValue.textContent = initialK.toFixed(1);
+    if (k === initialK) {
+      button.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    } else {
+      button.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    }
     
-    // Update k buttons based on available values
-    kButtons.innerHTML = '';
-    availableKValues.forEach((k, index) => {
-      const button = document.createElement('button');
-      button.onclick = () => setK(k);
-      button.textContent = k.toFixed(1);
-      button.id = `k-btn-${k.toFixed(1)}`; // Make sure ID matches what setK is looking for
+    kButtons.appendChild(button);
+  });
+}
+
+// Get data from loaded JSON with fallback to generated data
+function getData(pattern, t, k, method) {
+  if (!dataLoaded || !flowData) {
+    return generateOptimizedData(pattern, t, k, method, false);
+  }
+  
+  // Handle ground truth specially
+  if (method === 'ground_truth') {
+    const key = `${pattern}_ground_truth_k=1.0`;
+    if (flowData[key]) {
+      const timeData = flowData[key];
+      const pointData = timeData["0.00"];
       
-      // Set initial styles based on whether it's selected
-      if (k === initialK) {
-        button.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
-      } else {
-        button.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+      if (pointData && pointData.x && pointData.y) {
+        return { x: pointData.x, y: pointData.y };
       }
-      
-      kButtons.appendChild(button);
-    });
+    }
+    return generateOptimizedData(pattern, 0.0, k, method, false);
   }
-
-  // Set K value and update UI
-  function setK(value) {
-    const kValue = document.getElementById('k-value');
-    kValue.textContent = value.toFixed(1);
-    
-    // Force update button styles with setTimeout to ensure DOM is ready
-    setTimeout(() => {
-      availableKValues.forEach(k => {
-        const btnId = `k-btn-${k.toFixed(1)}`;
-        const btn = document.getElementById(btnId);
-        
-        if (btn) {
-          if (k === value) {
-            btn.style.cssText = 'background-color: #2563eb !important; color: #ffffff !important; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none !important; cursor: pointer;';
-            btn.setAttribute('data-selected', 'true');
-          } else {
-            btn.style.cssText = 'background-color: #e5e7eb !important; color: #374151 !important; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none !important; cursor: pointer;';
-            btn.setAttribute('data-selected', 'false');
-          }
-        }
-      });
-    }, 10);
-    
-    updateAllPlots();
+  
+  // Snap k to nearest available value
+  const actualK = snapToNearestK(k);
+  
+  // For base methods, use k=1.0; for others, use actual k
+  const isBaseMethod = (method === 'ddpm' || method === 'flow_ode');
+  const effectiveK = isBaseMethod ? 1.0 : actualK;
+  
+  if (!availableKValues.includes(effectiveK)) {
+    return generateOptimizedData(pattern, t, k, method, false);
   }
-
-  // Snap k value to nearest available value
-  function snapToNearestK(value) {
-    let nearest = availableKValues[0];
-    let minDiff = Math.abs(value - availableKValues[0]);
+  
+  // Construct key to match JSON format
+  let key;
+  if (currentPredType === 'flow') {
+    key = `${pattern}_flow_${method}_k=${effectiveK.toFixed(1)}`;
+  } else {
+    key = `${pattern}_v_${method}_k=${effectiveK.toFixed(1)}`;
+  }
+  
+  if (!flowData[key]) {
+    return generateOptimizedData(pattern, t, k, method, false);
+  }
+  
+  const timeData = flowData[key];
+  
+  // Find exact or closest time point
+  const timeStr = t.toFixed(2);
+  let selectedTime = timeStr;
+  
+  if (!timeData[timeStr]) {
+    const availableTimes = Object.keys(timeData).map(parseFloat);
+    let minDiff = Infinity;
     
-    for (const k of availableKValues) {
-      const diff = Math.abs(value - k);
+    availableTimes.forEach(availTime => {
+      const diff = Math.abs(availTime - t);
       if (diff < minDiff) {
         minDiff = diff;
-        nearest = k;
+        selectedTime = availTime.toFixed(2);
       }
-    }
-    
-    return nearest;
+    });
   }
+  
+  const pointData = timeData[selectedTime];
+  
+  if (!pointData) {
+    return generateOptimizedData(pattern, t, k, method, false);
+  }
+  
+  // Handle both compact and regular formats
+  if (pointData.x && pointData.y) {
+    return { x: pointData.x, y: pointData.y };
+  }
+  
+  if (Array.isArray(pointData) && pointData.length > 0) {
+    const x = pointData.map(p => p[0]);
+    const y = pointData.map(p => p[1]);
+    return { x, y };
+  }
+  
+  return generateOptimizedData(pattern, t, k, method, false);
+}
 
-  // Get the methods for current prediction type - UPDATED TO MATCH YOUR SCRIPT
-  function getMethodsForPredType() {
-    if (currentPredType === 'v') {
-      return [
-        { value: 'ground_truth', title: 'Ground Truth' },
-        { value: 'ddpm', title: 'DDPM' },
-        { value: 'cns', title: 'CNS' },
-        { value: 'tsr', title: 'TSR' }
-      ];
-    } else {
-      return [
-        { value: 'ground_truth', title: 'Ground Truth' },
-        { value: 'flow_ode', title: 'Flow-ODE' },
-        { value: 'flow_nns_sde', title: 'Flow-CNS-SDE' },
-        { value: 'flow_psr_ode', title: 'Flow-TSR-ODE' }
-      ];
+// Snap k value to nearest available value
+function snapToNearestK(value) {
+  let nearest = availableKValues[0];
+  let minDiff = Math.abs(value - availableKValues[0]);
+  
+  for (const k of availableKValues) {
+    const diff = Math.abs(value - k);
+    if (diff < minDiff) {
+      minDiff = diff;
+      nearest = k;
     }
   }
-
-  // Get data from loaded JSON - FIXED TO MATCH YOUR ACTUAL KEYS
-  function getData(pattern, t, k, method) {
-    if (!dataLoaded || !flowData) {
-      return generateData(pattern, t, k, method);
-    }
-    
-    // Handle ground truth specially - GENERATE FORWARD NOISING PROCESS
-    if (method === 'ground_truth') {
-      // Get clean data from your JSON (at T=0.0)
-      const key = `${pattern}_ground_truth_k=1.0`;
-      let cleanData = null;
-      
-      if (flowData[key]) {
-        const timeData = flowData[key];
-        const pointData = timeData["0.00"];
-        
-        if (pointData && pointData.x && pointData.y) {
-          cleanData = { x: pointData.x, y: pointData.y };
-        }
-      }
-      
-      // If no clean data available, generate it
-      if (!cleanData) {
-        cleanData = generateData(pattern, 0.0, k, method);
-      }
-      
-      // Generate forward noising process
-      if (t === 0.0) {
-        return cleanData;
-      } else {
-        // Apply forward diffusion: x_t = alpha_bar_t * x_0 + sqrt(1 - alpha_bar_t^2) * epsilon
-        const alpha_bar_t = Math.cos(t * Math.PI / 2); // Simple variance-preserving schedule
-        const sigma_t = Math.sin(t * Math.PI / 2);
-        
-        const noisyX = [];
-        const noisyY = [];
-        
-        for (let i = 0; i < cleanData.x.length; i++) {
-          const epsilon_x = Math.random() * 2 - 1; // Random noise
-          const epsilon_y = Math.random() * 2 - 1;
+  
+  return nearest;
+}
+function generateOptimizedData(pattern, t, k, method, useCache = true) {
+  const cacheKey = `${pattern}-${method}-${t.toFixed(2)}-${k.toFixed(1)}`;
+  
+  if (useCache && dataCache.has(cacheKey)) {
+    return dataCache.get(cacheKey);
+  }
+  
+  // Reduce point count for better performance
+  const n = 500; // Reduced from 300
+  let x = [];
+  let y = [];
+  
+  if (pattern === 'checkerboard') {
+    // Optimized checkerboard generation
+    const pointsPerSquare = Math.floor(n / 32);
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        if ((i + j) % 2 === 0) {
+          const centerX = i * 0.125 + 0.0625;
+          const centerY = j * 0.125 + 0.0625;
           
-          const noisy_x = alpha_bar_t * cleanData.x[i] + sigma_t * epsilon_x;
-          const noisy_y = alpha_bar_t * cleanData.y[i] + sigma_t * epsilon_y;
-          
-          noisyX.push(noisy_x);
-          noisyY.push(noisy_y);
-        }
-        
-        return { x: noisyX, y: noisyY };
-      }
-    }
-    
-    // Snap k to nearest available value
-    const actualK = snapToNearestK(k);
-    
-    // For base methods (ddpm, flow_ode), always use k=1.0
-    // But for CNS/TSR methods, use the actual k value
-    const isBaseMethod = (method === 'ddpm' || method === 'flow_ode');
-    const effectiveK = isBaseMethod ? 1.0 : actualK;
-    
-    // Check if this k value exists in our data
-    if (!availableKValues.includes(effectiveK)) {
-      console.warn(`K value ${effectiveK} not available, using closest: ${snapToNearestK(effectiveK)}`);
-      return generateData(pattern, t, k, method);
-    }
-    
-    // Construct key to match your ACTUAL JSON format
-    let key;
-    if (currentPredType === 'flow') {
-      // Your JSON has double "flow" for flow methods: checkerboard_flow_flow_nns_sde_k=1.0
-      key = `${pattern}_flow_${method}_k=${effectiveK.toFixed(1)}`;
-    } else {
-      // For v methods: checkerboard_v_ddpm_k=1.0
-      key = `${pattern}_v_${method}_k=${effectiveK.toFixed(1)}`;
-    }
-    
-    console.log(`Looking for key: ${key}`);
-    
-    if (!flowData[key]) {
-      console.warn(`Data not found for key: ${key}, using generated data`);
-      console.log(`Available keys starting with ${pattern}_${currentPredType}:`, 
-        Object.keys(flowData).filter(k => k.startsWith(`${pattern}_${currentPredType}`)));
-      return generateData(pattern, t, k, method);
-    }
-    
-    const timeData = flowData[key];
-    
-    // Find exact or closest time point
-    const timeStr = t.toFixed(2);
-    let selectedTime = timeStr;
-    
-    if (!timeData[timeStr]) {
-      // Find the closest available time
-      const availableTimes = Object.keys(timeData).map(parseFloat);
-      let minDiff = Infinity;
-      
-      availableTimes.forEach(availTime => {
-        const diff = Math.abs(availTime - t);
-        if (diff < minDiff) {
-          minDiff = diff;
-          selectedTime = availTime.toFixed(2);
-        }
-      });
-    }
-    
-    const pointData = timeData[selectedTime];
-    
-    if (!pointData) {
-      console.warn(`No data for time ${selectedTime} in ${key}`);
-      return generateData(pattern, t, k, method);
-    }
-    
-    // Handle compact format {"x": [...], "y": [...]}
-    if (pointData.x && pointData.y) {
-      return { x: pointData.x, y: pointData.y };
-    }
-    
-    // Handle regular format [[x, y], ...]
-    if (Array.isArray(pointData) && pointData.length > 0) {
-      const x = pointData.map(p => p[0]);
-      const y = pointData.map(p => p[1]);
-      return { x, y };
-    }
-    
-    return generateData(pattern, t, k, method);
-  }
-
-  // Fallback: Generate data based on pattern type
-  function generateData(pattern, t, k, method) {
-    const n = 300;
-    let x = [];
-    let y = [];
-    
-    if (pattern === 'checkerboard') {
-      // Generate checkerboard pattern
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          if ((i + j) % 2 === 0) {
-            for (let p = 0; p < n/32; p++) {
-              const noise = t * 0.3;  // More noise as t increases (toward noise state)
-              const centerX = i * 0.125 + 0.0625;
-              const centerY = j * 0.125 + 0.0625;
-              
-              // Apply different transformations based on method
-              let dx = (Math.random() - 0.5) * 0.05;
-              let dy = (Math.random() - 0.5) * 0.05;
-              
-              if (method.includes('cns') || method.includes('nns')) {
-                // More diffusion for these methods
-                dx *= (1 + t * k * 2);
-                dy *= (1 + t * k * 2);
-              } else if (method.includes('tsr') || method.includes('psr')) {
-                // Tighter clustering for these methods
-                dx *= Math.max(0.1, 1 - t * 0.5);
-                dy *= Math.max(0.1, 1 - t * 0.5);
-              }
-              
-              x.push(centerX + dx + (Math.random() - 0.5) * noise);
-              y.push(centerY + dy + (Math.random() - 0.5) * noise);
+          for (let p = 0; p < pointsPerSquare; p++) {
+            const noise = t * 0.3;
+            let dx = (Math.random() - 0.5) * 0.05;
+            let dy = (Math.random() - 0.5) * 0.05;
+            
+            // Method-specific transformations (simplified)
+            if (method.includes('cns') || method.includes('nns')) {
+              const factor = 1 + t * k * 2;
+              dx *= factor;
+              dy *= factor;
+            } else if (method.includes('tsr') || method.includes('psr')) {
+              const factor = Math.max(0.1, 1 - t * 0.5);
+              dx *= factor;
+              dy *= factor;
             }
+            
+            x.push(centerX + dx + (Math.random() - 0.5) * noise);
+            y.push(centerY + dy + (Math.random() - 0.5) * noise);
           }
         }
       }
-    } else if (pattern === 'swissroll') {
-      // Generate swiss roll pattern
-      for (let i = 0; i < n; i++) {
-        const theta = i / n * 3 * Math.PI;
-        const r = 0.1 + theta / (3 * Math.PI) * 0.3;
-        const noise = t * 0.1 * k;  // More noise as t increases
-        
-        // Apply spiral transformation
-        let px = 0.5 + r * Math.cos(theta) * (1 - t * 0.3);
-        let py = 0.5 + r * Math.sin(theta) * (1 - t * 0.3);
-        
-        // Add method-specific variations
-        if (method.includes('cns') || method.includes('nns')) {
-          px += (Math.random() - 0.5) * noise * 2;
-          py += (Math.random() - 0.5) * noise * 2;
-        } else {
-          px += (Math.random() - 0.5) * noise;
-          py += (Math.random() - 0.5) * noise;
-        }
-        
-        x.push(px);
-        y.push(py);
+    }
+  } else if (pattern === 'swissroll') {
+    // Optimized swiss roll generation
+    for (let i = 0; i < n; i++) {
+      const theta = i / n * 3 * Math.PI;
+      const r = 0.1 + theta / (3 * Math.PI) * 0.3;
+      const noise = t * 0.1 * k;
+      
+      let px = 0.5 + r * Math.cos(theta) * (1 - t * 0.3);
+      let py = 0.5 + r * Math.sin(theta) * (1 - t * 0.3);
+      
+      if (method.includes('cns') || method.includes('nns')) {
+        px += (Math.random() - 0.5) * noise * 2;
+        py += (Math.random() - 0.5) * noise * 2;
+      } else {
+        px += (Math.random() - 0.5) * noise;
+        py += (Math.random() - 0.5) * noise;
       }
+      
+      x.push(px);
+      y.push(py);
     }
-    
-    return { x, y };
   }
+  
+  const data = { x, y };
+  
+  // Cache the result
+  if (useCache && dataCache.size < 1000) { // Limit cache size
+    dataCache.set(cacheKey, data);
+  }
+  
+  return data;
+}
 
-  // Update all subplots in a single figure
-  function updateAllPlots() {
-    const sliderValue = parseFloat(document.getElementById('t-slider').value);
-    const t = 1.0 - sliderValue;  // Invert: slider 0 = T=1.0, slider 1 = T=0.0
-    const k = parseFloat(document.getElementById('k-value').textContent);
-    
-    document.getElementById('t-value').textContent = t.toFixed(2);
-    document.getElementById('k-value').textContent = k.toFixed(1);
-    
-    const methods = getMethodsForPredType();
-    const traces = [];
-    
-    // Create traces for all 8 subplots
-    // Top row - Swiss Roll
-    for (let i = 0; i < 4; i++) {
-      const data = getData('swissroll', t, k, methods[i].value);
-      traces.push({
-        x: data.x,
-        y: data.y,
-        mode: 'markers',
-        type: 'scatter',
-        marker: {
-          size: 2,
-          color: 'rgb(59, 130, 246)',
-          opacity: 0.6
-        },
-        showlegend: false,
-        xaxis: `x${i === 0 ? '' : i + 1}`,
-        yaxis: `y${i === 0 ? '' : i + 1}`
-      });
-    }
-    
-    // Bottom row - Checkerboard
-    for (let i = 0; i < 4; i++) {
-      const data = getData('checkerboard', t, k, methods[i].value);
-      traces.push({
-        x: data.x,
-        y: data.y,
-        mode: 'markers',
-        type: 'scatter',
-        marker: {
-          size: 2,
-          color: 'rgb(59, 130, 246)',
-          opacity: 0.6
-        },
-        showlegend: false,
-        xaxis: `x${i + 5}`,
-        yaxis: `y${i + 5}`
-      });
-    }
-    
-    // Create subplot layout
-    const layout = {
-      grid: { rows: 2, columns: 4, pattern: 'independent' },
-      paper_bgcolor: 'white',
-      plot_bgcolor: 'white',
-      margin: { t: 40, r: 20, b: 30, l: 20 },
-      hovermode: false,
-      annotations: []
-    };
-    
-    // Add titles for top row
-    for (let i = 0; i < 4; i++) {
-      layout.annotations.push({
-        text: methods[i].title,
-        xref: 'paper',
-        yref: 'paper',
-        x: (i * 0.25) + 0.125,
-        y: 1.02,
-        xanchor: 'center',
-        yanchor: 'bottom',
-        showarrow: false,
-        font: { size: 11 }
-      });
-    }
-    
-    // Add row labels
+// Get methods for current prediction type
+function getMethodsForPredType() {
+  if (currentPredType === 'v') {
+    return [
+      { value: 'ground_truth', title: 'Ground Truth' },
+      { value: 'ddpm', title: 'DDPM' },
+      { value: 'cns', title: 'CNS' },
+      { value: 'tsr', title: 'TSR' }
+    ];
+  } else {
+    return [
+      { value: 'ground_truth', title: 'Ground Truth' },
+      { value: 'flow_ode', title: 'Flow-ODE' },
+      { value: 'flow_nns_sde', title: 'Flow-CNS-SDE' },
+      { value: 'flow_psr_ode', title: 'Flow-TSR-ODE' }
+    ];
+  }
+}
+
+// Optimized plot update using Plotly.restyle instead of newPlot
+function updateAllPlotsOptimized() {
+  const startTime = performance.now();
+  
+  const sliderValue = parseFloat(document.getElementById('t-slider').value);
+  const t = 1.0 - sliderValue;
+  const k = parseFloat(document.getElementById('k-value').textContent);
+  
+  document.getElementById('t-value').textContent = t.toFixed(2);
+  
+  const methods = getMethodsForPredType();
+  const updateData = { x: [], y: [] };
+  
+  // Generate data for all 8 subplots - prioritize JSON data
+  for (let i = 0; i < 4; i++) {
+    const swissData = getData('swissroll', t, k, methods[i].value);
+    updateData.x.push(swissData.x);
+    updateData.y.push(swissData.y);
+  }
+  
+  for (let i = 0; i < 4; i++) {
+    const checkerData = getData('checkerboard', t, k, methods[i].value);
+    updateData.x.push(checkerData.x);
+    updateData.y.push(checkerData.y);
+  }
+  
+  if (plotInitialized) {
+    // Use Plotly.restyle for much faster updates
+    Plotly.restyle('plotly-chart', updateData, [0, 1, 2, 3, 4, 5, 6, 7]);
+  } else {
+    // Initial plot creation
+    initializePlot(updateData);
+    plotInitialized = true;
+  }
+  
+  // Performance tracking
+  const endTime = performance.now();
+  lastRenderTime = endTime - startTime;
+  frameCount++;
+  
+  updatePerformanceStats();
+}
+
+// Initialize the plot structure once
+function initializePlot(initialData) {
+  const methods = getMethodsForPredType();
+  const traces = [];
+  
+  // Create all traces
+  for (let i = 0; i < 8; i++) {
+    traces.push({
+      x: initialData.x[i],
+      y: initialData.y[i],
+      mode: 'markers',
+      type: 'scattergl', // Use WebGL for better performance
+      marker: {
+        size: 2,
+        color: 'rgb(59, 130, 246)',
+        opacity: 0.6
+      },
+      showlegend: false,
+      xaxis: i < 4 ? (i === 0 ? 'x' : `x${i + 1}`) : `x${i + 1}`,
+      yaxis: i < 4 ? (i === 0 ? 'y' : `y${i + 1}`) : `y${i + 1}`
+    });
+  }
+  
+  // Optimized layout
+  const layout = {
+    grid: { rows: 2, columns: 4, pattern: 'independent' },
+    paper_bgcolor: 'white',
+    plot_bgcolor: 'white',
+    margin: { t: 40, r: 20, b: 30, l: 20 },
+    hovermode: false,
+    dragmode: false, // Disable interactions for performance
+    scrollZoom: false,
+    doubleClick: false,
+    showTips: false,
+    annotations: []
+  };
+  
+  // Add titles
+  for (let i = 0; i < 4; i++) {
     layout.annotations.push({
-      text: 'Swiss Roll',
+      text: methods[i].title,
       xref: 'paper',
       yref: 'paper',
-      x: -0.02,
-      y: 0.75,
-      xanchor: 'right',
-      yanchor: 'middle',
+      x: (i * 0.25) + 0.125,
+      y: 1.02,
+      xanchor: 'center',
+      yanchor: 'bottom',
       showarrow: false,
-      font: { size: 10 },
-      textangle: -90
+      font: { size: 11 }
     });
+  }
+  
+  // Row labels
+  layout.annotations.push({
+    text: 'Swiss Roll',
+    xref: 'paper', yref: 'paper',
+    x: -0.02, y: 0.75,
+    xanchor: 'right', yanchor: 'middle',
+    showarrow: false,
+    font: { size: 10 }, textangle: -90
+  });
+  
+  layout.annotations.push({
+    text: 'Checkerboard',
+    xref: 'paper', yref: 'paper',
+    x: -0.02, y: 0.25,
+    xanchor: 'right', yanchor: 'middle',
+    showarrow: false,
+    font: { size: 10 }, textangle: -90
+  });
+  
+  // Configure axes
+  for (let i = 1; i <= 8; i++) {
+    const xaxis = i === 1 ? 'xaxis' : `xaxis${i}`;
+    const yaxis = i === 1 ? 'yaxis' : `yaxis${i}`;
     
-    layout.annotations.push({
-      text: 'Checkerboard',
-      xref: 'paper',
-      yref: 'paper',
-      x: -0.02,
-      y: 0.25,
-      xanchor: 'right',
-      yanchor: 'middle',
-      showarrow: false,
-      font: { size: 10 },
-      textangle: -90
-    });
-    
-    // Configure all axes
-    for (let i = 1; i <= 8; i++) {
-      const xaxis = i === 1 ? 'xaxis' : `xaxis${i}`;
-      const yaxis = i === 1 ? 'yaxis' : `yaxis${i}`;
-      
-      layout[xaxis] = {
-        range: [-1, 1],
-        showgrid: false,
-        showticklabels: false,
-        zeroline: false
-      };
-      
-      layout[yaxis] = {
-        range: [-1, 1],
-        showgrid: false,
-        showticklabels: false,
-        zeroline: false
-      };
-    }
-    
-    const config = {
-      displayModeBar: false,
-      responsive: true
+    layout[xaxis] = {
+      range: [-1, 1],
+      showgrid: false,
+      showticklabels: false,
+      zeroline: false,
+      fixedrange: true // Disable zoom/pan for performance
     };
     
-    Plotly.newPlot('plotly-chart', traces, layout, config);
+    layout[yaxis] = {
+      range: [-1, 1],
+      showgrid: false,
+      showticklabels: false,
+      zeroline: false,
+      fixedrange: true
+    };
   }
+  
+  const config = {
+    displayModeBar: false,
+    responsive: true,
+    staticPlot: false // Keep false but disable interactions above
+  };
+  
+  Plotly.newPlot('plotly-chart', traces, layout, config);
+}
 
-  // Set prediction type
-  function setPredType(predType) {
-    currentPredType = predType;
-    
-    // Update button styles
-    const vBtn = document.getElementById('v-btn');
-    const flowBtn = document.getElementById('flow-btn');
-    
-    if (predType === 'v') {
-      vBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
-      flowBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
-    } else {
-      vBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
-      flowBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
-    }
-    
-    // Update plots
-    updateAllPlots();
+// Performance stats update
+function updatePerformanceStats() {
+  const stats = document.getElementById('perf-stats');
+  if (stats) {
+    const fps = frameCount > 0 ? Math.round(1000 / lastRenderTime) : 0;
+    stats.textContent = `Render time: ${lastRenderTime.toFixed(1)}ms | FPS: ${fps}`;
   }
+}
 
-  // Animation functions
-  function animate() {
-    const slider = document.getElementById('t-slider');
-    let value = parseFloat(slider.value);
-    
-    // Convert slider value to time for step size calculation
-    const t = 1.0 - value; // Current time value
-    
-    // Variable step size - smaller steps as we approach data (T=0) for smoother animation
-    const stepSize = t > 0.5 ? 0.04 : 0.02;
-    
-    value += stepSize; // Increase slider value to go from T=1.0 to T=0.0
-    
-    // Ensure we snap to discrete values
-    value = Math.round(value * 100) / 100; // Round to nearest 0.01
-    
-    if (value >= 1) {
-      // Stop at slider=1 (T=0.0, clean data)
-      value = 1;
-      slider.value = value;
-      updateAllPlots();
-      
-      // Stop the animation
-      isPlaying = false;
-      const btn = document.getElementById('play-btn');
-      btn.innerHTML = `
-        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        Play Animation
-      `;
-      btn.style.backgroundColor = '#10b981';
-      return;
-    }
-    
+// Optimized animation with requestAnimationFrame
+function animateOptimized() {
+  const slider = document.getElementById('t-slider');
+  let value = parseFloat(slider.value);
+  
+  const t = 1.0 - value;
+  const stepSize = t > 0.5 ? 0.02 : 0.01;
+  
+  value += stepSize;
+  value = Math.round(value * 50) / 50; // Snap to 0.02 intervals
+  
+  if (value >= 1) {
+    value = 1;
     slider.value = value;
-    updateAllPlots();
-    
-    // Calculate delay - faster at beginning (noise), slower as we approach data
-    let delay;
-    if (t > 0.5) {
-      // First half (T=1.0 to T=0.5): constant fast speed
-      delay = 10;
-    } else {
-      // Second half (T=0.5 to T=0.0): linear deceleration for smoother approach to data
-      // Map t from [0.5, 0.0] to [0, 1] for interpolation
-      const normalizedT = (0.5 - t) / 0.5;
-      // Linear interpolation from 10ms to 50ms
-      delay = 10 + 40 * normalizedT;
-    }
-    
-    if (isPlaying) {
-      animationId = setTimeout(animate, delay);
-    }
+    updateAllPlotsOptimized();
+    stopAnimation();
+    return;
   }
+  
+  slider.value = value;
+  updateAllPlotsOptimized();
 
-  function toggleAnimation() {
-    isPlaying = !isPlaying;
-    const btn = document.getElementById('play-btn');
+  
+  if (isPlaying) {
+    animationId = requestAnimationFrame(animateOptimized);
+  }
+}
+
+function stopAnimation() {
+  isPlaying = false;
+  const btn = document.getElementById('play-btn');
+  btn.innerHTML = `
+    <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    Play Animation
+  `;
+  btn.style.backgroundColor = '#10b981';
+  
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+  }
+}
+
+// Control functions
+function setPredType(predType) {
+  currentPredType = predType;
+  dataCache.clear(); // Clear cache when switching types
+  
+  const vBtn = document.getElementById('v-btn');
+  const flowBtn = document.getElementById('flow-btn');
+  
+  if (predType === 'v') {
+    vBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    flowBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+  } else {
+    vBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    flowBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+  }
+  
+  plotInitialized = false; // Force plot recreation with new methods
+  updateAllPlotsOptimized();
+}
+
+function setK(value) {
+  document.getElementById('k-value').textContent = value.toFixed(1);
+  
+  // Update button styles
+  const buttons = document.querySelectorAll('#k-buttons button');
+  buttons.forEach(btn => {
+    if (btn.textContent === value.toFixed(1)) {
+      btn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    } else {
+      btn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    }
+  });
+  
+  updateAllPlotsOptimized();
+}
+
+function toggleAnimation() {
+  frameCount = 0; // Reset frame counter
+  
+  if (!isPlaying) {
     const slider = document.getElementById('t-slider');
-    
-    if (isPlaying) {
-      // Reset to beginning (slider=0, T=1.0 noise) if at the end
-      if (parseFloat(slider.value) >= 1) {
-        slider.value = 0;
-        updateAllPlots();
-      }
-      
-      btn.innerHTML = `
-        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        Pause Animation
-      `;
-      btn.style.backgroundColor = '#dc2626';
-      animate();
-    } else {
-      btn.innerHTML = `
-        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        Play Animation
-      `;
-      btn.style.backgroundColor = '#10b981';
-      if (animationId) {
-        clearTimeout(animationId);
-      }
+    if (parseFloat(slider.value) >= 1) {
+      slider.value = 0;
+      updateAllPlotsOptimized();
     }
+    
+    isPlaying = true;
+    const btn = document.getElementById('play-btn');
+    btn.innerHTML = `
+      <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      Pause Animation
+    `;
+    btn.style.backgroundColor = '#dc2626';
+    
+    animateOptimized();
+  } else {
+    stopAnimation();
   }
+}
 
-  // Event listeners
-  document.getElementById('t-slider').addEventListener('input', function() {
-    const sliderValue = parseFloat(this.value);
-    
-    // Update displayed T value (convert from slider to time)
-    const t = 1.0 - sliderValue;
-    document.getElementById('t-value').textContent = t.toFixed(2);
-    
-    updateAllPlots();
-  });
+// Event listeners
+document.getElementById('t-slider').addEventListener('input', function() {
+  const sliderValue = parseFloat(this.value);
+  const t = 1.0 - sliderValue;
+  document.getElementById('t-value').textContent = t.toFixed(2);
+  updateAllPlotsOptimized();
+});
 
-  // Initialize - load data first, then plot
-  window.addEventListener('DOMContentLoaded', () => {
-    loadFlowData();
-  });
+// Initialize - load JSON data first
+window.addEventListener('DOMContentLoaded', () => {
+  // Show loading spinner initially
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) {
+    spinner.style.display = 'flex';
+  }
+  
+  // Load data and initialize
+  loadFlowData();
+  
+  // Start FPS monitoring
+  fpsInterval = setInterval(() => {
+    frameCount = 0; // Reset for next interval
+  }, 1000);
+});
 </script>
 
 </body>
