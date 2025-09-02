@@ -590,10 +590,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-
-
-
-
 <!-- Interactive Visualization Section -->
 <section class="section">
   <div class="container is-max-desktop">
@@ -696,101 +692,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </footer>
 
 <script>
-  // Static plots control variables
-  let visibleMethods = new Set(['ddpm', 'cns', 'tsr']); // All visible by default
-
-  // Toggle method visibility
-  function toggleMethod(method) {
-    if (visibleMethods.has(method)) {
-      visibleMethods.delete(method);
-    } else {
-      visibleMethods.add(method);
-    }
-    updatePlotVisibility();
-    updateButtonStates();
-  }
-
-  // Show all methods
-  function showAllMethods() {
-    visibleMethods = new Set(['ddpm', 'cns', 'tsr']);
-    updatePlotVisibility();
-    updateButtonStates();
-  }
-
-  // Hide all methods
-  function hideAllMethods() {
-    visibleMethods.clear();
-    updatePlotVisibility();
-    updateButtonStates();
-  }
-
-  // Update plot visibility
-  function updatePlotVisibility() {
-    const methods = ['ddpm', 'cns', 'tsr'];
-    
-    methods.forEach(method => {
-      const plots = document.querySelectorAll(`.${method}-plot`);
-      plots.forEach(plot => {
-        if (visibleMethods.has(method)) {
-          plot.classList.remove('hidden');
-        } else {
-          plot.classList.add('hidden');
-        }
-      });
-    });
-
-    // Update grid layout to adapt to visible plots
-    const grids = ['unconditional-grid', 'conditional-grid'];
-    grids.forEach(gridId => {
-      const grid = document.getElementById(gridId);
-      if (grid) {
-        const visibleCount = visibleMethods.size;
-        if (visibleCount === 0) {
-          grid.style.display = 'none';
-        } else {
-          grid.style.display = 'grid';
-          // Dynamically adjust grid columns based on visible plots
-          if (visibleCount === 1) {
-            grid.style.gridTemplateColumns = '1fr';
-          } else if (visibleCount === 2) {
-            grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
-          } else {
-            grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-          }
-        }
-      }
-    });
-  }
-
-  // Update button states
-  function updateButtonStates() {
-    const methods = ['ddmp', 'cns', 'tsr'];
-    const colors = {
-      'ddpm': '#2563eb',
-      'cns': '#059669', 
-      'tsr': '#7c3aed'
-    };
-
-    methods.forEach(method => {
-      const btn = document.getElementById(`${method}-btn`);
-      const color = colors[method];
-      
-      if (btn) {
-        if (visibleMethods.has(method)) {
-          // Active state
-          btn.style.backgroundColor = color;
-          btn.style.color = 'white';
-          btn.querySelector('span').style.opacity = '0.9';
-        } else {
-          // Inactive state
-          btn.style.backgroundColor = '#d1d5db';
-          btn.style.color = '#6b7280';
-          btn.querySelector('span').style.opacity = '0.5';
-        }
-      }
-    });
-  }
-
   // Interactive visualization variables
   let currentPredType = 'flow'; // 'v' for diffusion, 'flow' for flow
   let animationId = null;
@@ -823,6 +724,7 @@ document.addEventListener('DOMContentLoaded', function() {
       dataLoaded = true;
       console.log('Flow data loaded successfully');
       console.log('Available K values:', availableKValues);
+      console.log('Sample keys:', Object.keys(flowData).slice(0, 5));
       
       // Update UI to show available methods
       updateAllPlots();
@@ -928,80 +830,83 @@ document.addEventListener('DOMContentLoaded', function() {
     return nearest;
   }
 
-  // Get the methods for current prediction type
+  // Get the methods for current prediction type - UPDATED TO MATCH YOUR SCRIPT
   function getMethodsForPredType() {
     if (currentPredType === 'v') {
       return [
         { value: 'ground_truth', title: 'Ground Truth' },
-        { value: 'v_ddpm', title: 'DDPM' },
-        { value: 'v_cns', title: 'CNS' },
-        { value: 'v_tsr', title: 'TSR' }
+        { value: 'ddpm', title: 'DDPM' },
+        { value: 'cns', title: 'CNS' },
+        { value: 'tsr', title: 'TSR' }
       ];
     } else {
       return [
         { value: 'ground_truth', title: 'Ground Truth' },
-        { value: 'flow_flow_ode', title: 'Flow-ODE' },
-        { value: 'flow_flow_nns_sde', title: 'Flow-NNS-SDE' },
-        { value: 'flow_flow_psr_ode', title: 'Flow-PSR-ODE' }
+        { value: 'flow_ode', title: 'Flow-ODE' },
+        { value: 'flow_nns_sde', title: 'Flow-CNS-SDE' },
+        { value: 'flow_psr_ode', title: 'Flow-TSR-ODE' }
       ];
     }
   }
 
-  // Get data from loaded JSON or generate if not available
+  // Get data from loaded JSON - FIXED TO MATCH YOUR ACTUAL KEYS
   function getData(pattern, t, k, method) {
     if (!dataLoaded || !flowData) {
       return generateData(pattern, t, k, method);
     }
     
-    // Handle ground truth specially
+    // Handle ground truth specially - GENERATE FORWARD NOISING PROCESS
     if (method === 'ground_truth') {
+      // Get clean data from your JSON (at T=0.0)
       const key = `${pattern}_ground_truth_k=1.0`;
+      let cleanData = null;
+      
       if (flowData[key]) {
         const timeData = flowData[key];
-        // Ground truth is the same at all times, just use any time point
-        const timeStr = "0.00";
-        const pointData = timeData[timeStr];
+        const pointData = timeData["0.00"];
         
-        if (pointData) {
-          // Handle compact format {"x": [...], "y": [...]}
-          if (pointData.x && pointData.y) {
-            return { x: pointData.x, y: pointData.y };
-          }
-          
-          // Handle regular format [[x, y], ...]
-          if (Array.isArray(pointData) && pointData.length > 0) {
-            const x = pointData.map(p => p[0]);
-            const y = pointData.map(p => p[1]);
-            return { x, y };
-          }
+        if (pointData && pointData.x && pointData.y) {
+          cleanData = { x: pointData.x, y: pointData.y };
         }
       }
-      return generateData(pattern, t, k, method);
+      
+      // If no clean data available, generate it
+      if (!cleanData) {
+        cleanData = generateData(pattern, 0.0, k, method);
+      }
+      
+      // Generate forward noising process
+      if (t === 0.0) {
+        return cleanData;
+      } else {
+        // Apply forward diffusion: x_t = alpha_bar_t * x_0 + sqrt(1 - alpha_bar_t^2) * epsilon
+        const alpha_bar_t = Math.cos(t * Math.PI / 2); // Simple variance-preserving schedule
+        const sigma_t = Math.sin(t * Math.PI / 2);
+        
+        const noisyX = [];
+        const noisyY = [];
+        
+        for (let i = 0; i < cleanData.x.length; i++) {
+          const epsilon_x = Math.random() * 2 - 1; // Random noise
+          const epsilon_y = Math.random() * 2 - 1;
+          
+          const noisy_x = alpha_bar_t * cleanData.x[i] + sigma_t * epsilon_x;
+          const noisy_y = alpha_bar_t * cleanData.y[i] + sigma_t * epsilon_y;
+          
+          noisyX.push(noisy_x);
+          noisyY.push(noisy_y);
+        }
+        
+        return { x: noisyX, y: noisyY };
+      }
     }
     
     // Snap k to nearest available value
     const actualK = snapToNearestK(k);
     
-    // Parse method string to extract pred_type and actual method name
-    // Method format from dropdown: "flow_flow_ode" or "v_ddpm"
-    let pred_type, methodName;
-    
-    if (method.startsWith('flow_')) {
-      pred_type = 'flow';
-      methodName = method.substring(5); // Remove "flow_" prefix
-    } else if (method.startsWith('v_')) {
-      pred_type = 'v';
-      methodName = method.substring(2); // Remove "v_" prefix
-    } else {
-      // Fallback parsing
-      const parts = method.split('_');
-      pred_type = parts[0];
-      methodName = parts.slice(1).join('_');
-    }
-    
     // For base methods (ddpm, flow_ode), always use k=1.0
-    // But for NNS and PSR methods, use the actual k value
-    const isBaseMethod = (methodName === 'ddpm' || methodName === 'flow_ode');
+    // But for CNS/TSR methods, use the actual k value
+    const isBaseMethod = (method === 'ddpm' || method === 'flow_ode');
     const effectiveK = isBaseMethod ? 1.0 : actualK;
     
     // Check if this k value exists in our data
@@ -1010,11 +915,22 @@ document.addEventListener('DOMContentLoaded', function() {
       return generateData(pattern, t, k, method);
     }
     
-    const key = `${pattern}_${pred_type}_${methodName}_k=${effectiveK.toFixed(1)}`;
+    // Construct key to match your ACTUAL JSON format
+    let key;
+    if (currentPredType === 'flow') {
+      // Your JSON has double "flow" for flow methods: checkerboard_flow_flow_nns_sde_k=1.0
+      key = `${pattern}_flow_${method}_k=${effectiveK.toFixed(1)}`;
+    } else {
+      // For v methods: checkerboard_v_ddpm_k=1.0
+      key = `${pattern}_v_${method}_k=${effectiveK.toFixed(1)}`;
+    }
+    
     console.log(`Looking for key: ${key}`);
     
     if (!flowData[key]) {
       console.warn(`Data not found for key: ${key}, using generated data`);
+      console.log(`Available keys starting with ${pattern}_${currentPredType}:`, 
+        Object.keys(flowData).filter(k => k.startsWith(`${pattern}_${currentPredType}`)));
       return generateData(pattern, t, k, method);
     }
     
@@ -1381,9 +1297,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize - load data first, then plot
   window.addEventListener('DOMContentLoaded', () => {
     loadFlowData();
-    // Initialize static plot visibility
-    updatePlotVisibility();
-    updateButtonStates();
   });
 </script>
 
