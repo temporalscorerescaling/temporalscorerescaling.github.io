@@ -458,11 +458,9 @@
             <span>TSR (Ours)</span>
           </button>
           <button data-method="ddpm" class="button active" onclick="selectMethod('unconditional', 'ddpm')">
-            <!-- <span class="icon"><i class="fas fa-random"></i></span> -->
             <span>DDPM</span>
           </button>
           <button data-method="cns" class="button" onclick="selectMethod('unconditional', 'cns')">
-            <!-- <span class="icon"><i class="fas fa-volume-up"></i></span> -->
             <span>CNS</span>
           </button>
         </div>
@@ -487,12 +485,12 @@
             <h4 class="subtitle is-5">DDPM+CNS</h4>
           </div>
         </div>
-                <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+        
+        <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
           <p><strong>Figure 1.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
           The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
           Our TSR method shows improved control over the sampling process compared to baseline methods.</p>
         </div>
-
       </div>
 
       <!-- Conditional Generation -->
@@ -559,20 +557,20 @@
 <script>
 // Method selection functionality
 function selectMethod(section, method) {
-  // Update button states
-  const buttons = document.querySelectorAll(`[onclick*="${section}"]`);
-  buttons.forEach(btn => {
+  // Update button states for the specific section
+  const sectionButtons = document.querySelectorAll(`.generation-section:has(#${section}-tsr) .method-control-buttons button`);
+  sectionButtons.forEach(btn => {
     btn.classList.remove('active');
   });
   
-  // Set active button (excluding TSR which is always shown)
+  // Set active button
   const activeButton = document.querySelector(`[onclick="selectMethod('${section}', '${method}')"]`);
   if (activeButton) {
     activeButton.classList.add('active');
   }
   
-  // Hide all method plots except TSR
-  const allPlots = document.querySelectorAll(`#${section}-ddpm, #${section}-flow, #${section}-cfg, #${section}-cns`);
+  // Hide all method plots for this section except TSR
+  const allPlots = document.querySelectorAll(`#${section}-ddpm, #${section}-cfg, #${section}-cns`);
   allPlots.forEach(plot => {
     plot.classList.add('hidden');
   });
@@ -583,7 +581,7 @@ function selectMethod(section, method) {
     selectedPlot.classList.remove('hidden');
   }
   
-  // TSR is always visible
+  // TSR is always visible (never add hidden class to it)
   const tsrPlot = document.querySelector(`#${section}-tsr`);
   if (tsrPlot) {
     tsrPlot.classList.remove('hidden');
@@ -592,9 +590,9 @@ function selectMethod(section, method) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-  // Set initial state - show TSR + DDPM for both sections
-  selectMethod('unconditional', 'ddpm');
-  selectMethod('conditional', 'ddpm');
+  // Set initial state - both sections should show TSR + DDPM
+  // The buttons already have 'active' class and plots have correct visibility
+  console.log('Page loaded - default state initialized');
 });
 </script>
 
