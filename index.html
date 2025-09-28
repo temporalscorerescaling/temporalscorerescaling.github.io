@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>Temporal Score Rescaling for Temperature Sampling in Diffusion and Flow Models</title>
-  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <!-- <link rel="icon" type="image/x-icon" href="static/images/favicon.ico"> -->
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
 
   <link rel="stylesheet" href="static/css/bulma.min.css">
@@ -195,8 +195,8 @@
     }
 
     .control-label {
-      font-size: 0.875rem;
-      font-weight: 500;
+      font-size: 1.0rem;
+      font-weight: 600;
       color: #374151;
       margin-bottom: 0.5rem;
       display: block;
@@ -296,7 +296,7 @@
           <div class="column has-text-centered">
             <h1 class="title is-1 publication-title">Temporal Score Rescaling for Temperature Sampling in Diffusion and Flow Models</h1>
             <div class="is-size-5 publication-authors">
-              <!-- Paper authors -->
+               <!-- Paper authors -->
               <span class="author-block">
                 <a href="https://yanboxu.netlify.app/" target="_blank">Yanbo Xu</a><sup>*1</sup>,</span>
                 <span class="author-block">
@@ -367,11 +367,18 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Score-based generative models, such as denoising diffusion or flow matching, have become ubiquitous across perception, generation, and interaction.
-            Given training data $\{\mathbf{x}^n\}$, they can model the underlying data distribution $p_{\theta}(\mathbf{x})$ (or $p(\mathbf{x}|\mathbf{c})$ for conditional settings) and at inference, then allow drawing samples $\mathbf{x} \sim p_{\theta}(\mathbf{x})$ e.g. to generate novel images.
-            However, in certain applications, we may not want to truly sample the original data distribution.
-            For example, when predicting depth from RGB input, we may want the more likely estimate(s) as output. In contrast, an artist exploring design choices may want the trained image generative model to yield more diverse samples even if they may be somewhat less likely in the data. In this work, we ask whether we can steer the sampling process of diffusion or flow matching models to output more likely (or conversely, more diverse) samples than the original training data.
-          </p>
+            We present a mechanism to steer the sampling diversity of denoising diffusion and flow matching models, 
+            allowing users to sample from a sharper or broader distribution than the training distribution. 
+            We build on the observation that these models leverage (learned) score functions of noisy data distributions 
+            for sampling and show that rescaling these allows one to effectively control a 'local' sampling temperature. 
+            Notably, this approach does not require any finetuning or alterations to training strategy, 
+            and can be applied to any off-the-shelf model and is compatible with both, deterministic and stochastic samplers. 
+            We first validate our framework on toy 2D data, and then demonstrate its application for diffusion models 
+            trained across five disparate tasks -- image generation, pose estimation, depth prediction, robot manipulation, 
+            and protein design. We find that  across these tasks, our approach allows sampling from sharper (or flatter) distributions, 
+            yielding performance gains e.g., depth prediction models benefit from sampling more likely depth estimates, 
+            whereas image generation models perform better when sampling a slightly flatter distribution.
+            </p>
         </div>
       </div>
     </div>
@@ -381,10 +388,10 @@
 
 <!-- Main Content Section -->
 <section class="section">
-  <div class="container is-max-desktop">
+  <div class="container" style="max-width: 1400px;">
     <div class="content">
 
-      <h2 class="title is-3">Diffusion and Flow Models</h2>
+      <!-- <h2 class="title is-3">Diffusion and Flow Models</h2>
       <p>
         Diffusion and flow models both fall under the family of stochastic interpolant<sup>1</sup>, which converts samples from data distribution $\mathbf{x}_0 \sim p_0(\mathbf{x})$ to Gaussian noise $\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})$. The interpolant process can be defined as:
       </p>
@@ -438,114 +445,126 @@
         where compared to the regular reverse-time SDE, the noise term is scaled by the constant factor $\frac{1}{\sqrt{k}}$. 
         Intuitively, a larger $k$ reduces the noise injected at each step, leading to samples that are more likely under the model distribution, while a smaller $k$ increases the noise, promoting diversity.
         While CNS is widely used to control sample variance and improve quality, it <strong>only applies to stochastic samplers</strong> and <strong>a fixed scaling factor over sampling horizon often leads to impaired distribution and mode dropping.</strong>
-      </p>
+      </p> -->
 
       <!-- Illustrative Examples Section -->
-      <h2 class="title is-3">Illustrative Examples</h2>
+      <h2 class="title is-3">Analysis on Mixture of 1D Gaussians</h2>
       <p>
-        To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a <strong>simple isotropic Gaussian mixture</strong> as a data distribution, where top 3 modes are class 0 and bottom 3 modes are class 1. 
+        To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a <strong>simple isotropic Gaussian mixture</strong> as a data distribution. 
         We use the analytical score function of the GMM for all methods, for both conditional and unconditional generation. 
         Intuitively, we would want the sampled distribution to preserve the global structure of the data distribution, while adjusting the "sharpness" of each mode to control sample likelihood and diversity.
       </p>
 
+      <!-- <p>
+        To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a <strong>simple isotropic Gaussian mixture</strong> as a data distribution, where top 3 modes are class 0 and bottom 3 modes are class 1. 
+        We use the analytical score function of the GMM for all methods, for both conditional and unconditional generation. 
+        Intuitively, we would want the sampled distribution to preserve the global structure of the data distribution, while adjusting the "sharpness" of each mode to control sample likelihood and diversity.
+      </p> -->
+
+      <br>
       <!-- Unconditional Generation -->
       <div class="generation-section">
         <h3 class="title is-4">Unconditional Generation</h3>
-        
-        <div class="method-control-buttons">
-          <button data-method="tsr" class="button">
-            <span class="icon"><i class="fas fa-star"></i></span>
-            <span>TSR (Ours)</span>
-          </button>
-          <button data-method="ddpm" class="button active" onclick="selectMethod('unconditional', 'ddpm')">
-            <span>DDPM</span>
-          </button>
-          <button data-method="cns" class="button" onclick="selectMethod('unconditional', 'cns')">
-            <span>CNS</span>
-          </button>
-        </div>
+        <p>
+          We first evaluate our method on unconditional generation using an isotropic mixture of 3 Gaussians, shown below.
 
+        <!-- <p>
+          We first consider unconditional generation, where the data distribution is an isotropic mixture of 3 Gaussians. As shown in the above figure, constant noise scaling (CNS) struggles to preserve the global structure of the data distribution, often biasing samples toward the central mode and collapsing multiple modes. In contrast, our TSR method effectively sharpens each mode while maintaining the overall structure of the distribution.
+        </p> -->
+        
         <div class="method-grid">
-          <div class="method-plot" id="unconditional-tsr">
-            <div class="image-container">
-              <img src="static/images/tsr.png" alt="TSR Unconditional Generation">
-            </div>
-            <h4 class="subtitle is-5">DDPM+TSR (Ours)</h4>
-          </div>
           <div class="method-plot" id="unconditional-ddpm">
             <div class="image-container">
               <img src="static/images/ddpm.png" alt="DDPM Unconditional Generation">
             </div>
-            <h4 class="subtitle is-5">DDPM</h4>
+            <h4 class="subtitle is-5">Original (DDPM)</h4>
           </div>
-          <div class="method-plot hidden" id="unconditional-cns">
+          <div class="method-plot" id="unconditional-tsr">
+            <div class="image-container">
+              <img src="static/images/tsr.png" alt="TSR Unconditional Generation">
+            </div>
+            <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
+          </div>
+          <div class="method-plot" id="unconditional-cns">
             <div class="image-container">
               <img src="static/images/cns.png" alt="CNS Unconditional Generation">
             </div>
-            <h4 class="subtitle is-5">DDPM+CNS</h4>
+            <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
           </div>
         </div>
         
         <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
           <p><strong>Figure 1.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
           The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
-          Our TSR method shows improved control over the sampling process compared to baseline methods.</p>
+          Constant noise scaling (CNS) struggles to preserve the global structure, often biasing samples toward the central mode and collapsing multiple modes, while our TSR method maintains distribution structure.
+          </p>
+
+          <!-- <p><strong>Figure 1.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
+          The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
+          </p> -->
         </div>
       </div>
 
+      <br>
       <!-- Conditional Generation -->
       <div class="generation-section">
         <h3 class="title is-4">Conditional Generation</h3>
+        <!-- <p>
+          We also evaluate the methods on conditional generation, where the data distribution is an isotropic mixture of 6 Gaussians, with the top 3 modes belonging to class 0 and the bottom 3 modes to class 1.
+          Similar to the unconditional case, CNS struggles to biases samples towards central mode. Classifer Free Guidance (CFG) also fail to preserve the global structure by preferring samples modes around the edges.
+          TSR effectively sharpens each mode while preserving the overall structure of the distribution.
+        </p> -->
+
+        <p>
+          Here we evaluate conditional generation where the data distribution is an isotropic mixture of 6 Gaussians, with the top 3 modes belonging to class 0 and the bottom 3 modes to class 1.  
+        </p>
         
         <div class="method-control-buttons">
-          <button data-method="tsr" class="button">
-            <span class="icon"><i class="fas fa-star"></i></span>
-            <span>TSR (Ours)</span>
-          </button>
-          <button data-method="ddpm" class="button active" onclick="selectMethod('conditional', 'ddpm')">
-            <!-- <span class="icon"><i class="fas fa-random"></i></span> -->
-            <span>DDPM</span>
-          </button>
-          <button data-method="cfg" class="button" onclick="selectMethod('conditional', 'cfg')">
-            <!-- <span class="icon"><i class="fas fa-cog"></i></span> -->
+          <button data-method="cfg" id="cfg-btn" class="button active" onclick="toggleConditionalMethod('cfg')">
             <span>CFG</span>
           </button>
-          <button data-method="cns" class="button" onclick="selectMethod('conditional', 'cns')">
-            <!-- <span class="icon"><i class="fas fa-cog"></i></span> -->
+          <button data-method="cns" id="cns-btn" class="button" onclick="toggleConditionalMethod('cns')">
             <span>CNS</span>
           </button>
         </div>
 
         <div class="method-grid">
-          <div class="method-plot" id="conditional-tsr">
-            <div class="image-container">
-              <img src="static/images/tsr_cond.png" alt="TSR Conditional Generation">
-            </div>
-            <h4 class="subtitle is-5">DDMP+TSR (Ours)</h4>
-          </div>
           <div class="method-plot" id="conditional-ddpm">
             <div class="image-container">
               <img src="static/images/ddpm_cond.png" alt="DDPM Conditional Generation">
             </div>
-            <h4 class="subtitle is-5">DDPM</h4>
+            <h4 class="subtitle is-5">Original (DDPM, class 0)</h4>
           </div>
-          <div class="method-plot hidden" id="conditional-cfg">
+          <div class="method-plot" id="conditional-tsr">
+            <div class="image-container">
+              <img src="static/images/tsr_cond.png" alt="TSR Conditional Generation">
+            </div>
+            <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
+          </div>
+          <div class="method-plot" id="conditional-cfg">
             <div class="image-container">
               <img src="static/images/ddpm_cond_cfg.png" alt="CFG Conditional Generation">
             </div>
-            <h4 class="subtitle is-5">DDPM+CFG</h4>
+            <h4 class="subtitle is-5">+Classifier Free Guidance</h4>
           </div>
           <div class="method-plot hidden" id="conditional-cns">
             <div class="image-container">
               <img src="static/images/cns_cond.png" alt="CNS Conditional Generation">
             </div>
-            <h4 class="subtitle is-5">DDPM+CNS</h4>
+            <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
           </div>
         </div>
-                <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+        
+        <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <!-- <p><strong>Figure 2.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
+          The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
+          </p> -->
+
           <p><strong>Figure 2.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
           The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
-          Our TSR method shows improved control over the sampling process compared to baseline methods.</p>
+          The data distribution contains 6 Gaussians with top 3 modes belonging to class 0 and bottom 3 modes to class 1. 
+          CNS biases samples towards central modes while Classifier Free Guidance (CFG) prefers edge modes. Both methods fail to preserve the global structure, while our TSR method maintains distribution structure.
+          </p>
         </div>
 
       </div>
@@ -555,36 +574,23 @@
 </section>
 
 <script>
-// Method selection functionality
-function selectMethod(section, method) {
-  // Update button states for the specific section
-  const sectionButtons = document.querySelectorAll(`.generation-section:has(#${section}-tsr) .method-control-buttons button`);
-  sectionButtons.forEach(btn => {
-    btn.classList.remove('active');
-  });
+// Method selection functionality for conditional generation only
+function toggleConditionalMethod(method) {
+  // Update button states
+  const cfgBtn = document.getElementById('cfg-btn');
+  const cnsBtn = document.getElementById('cns-btn');
   
-  // Set active button
-  const activeButton = document.querySelector(`[onclick="selectMethod('${section}', '${method}')"]`);
-  if (activeButton) {
-    activeButton.classList.add('active');
-  }
+  cfgBtn.classList.remove('active');
+  cnsBtn.classList.remove('active');
   
-  // Hide all method plots for this section except TSR
-  const allPlots = document.querySelectorAll(`#${section}-ddpm, #${section}-cfg, #${section}-cns`);
-  allPlots.forEach(plot => {
-    plot.classList.add('hidden');
-  });
-  
-  // Show selected method plot
-  const selectedPlot = document.querySelector(`#${section}-${method}`);
-  if (selectedPlot) {
-    selectedPlot.classList.remove('hidden');
-  }
-  
-  // TSR is always visible (never add hidden class to it)
-  const tsrPlot = document.querySelector(`#${section}-tsr`);
-  if (tsrPlot) {
-    tsrPlot.classList.remove('hidden');
+  if (method === 'cfg') {
+    cfgBtn.classList.add('active');
+    document.getElementById('conditional-cfg').classList.remove('hidden');
+    document.getElementById('conditional-cns').classList.add('hidden');
+  } else {
+    cnsBtn.classList.add('active');
+    document.getElementById('conditional-cns').classList.remove('hidden');
+    document.getElementById('conditional-cfg').classList.add('hidden');
   }
 }
 
@@ -601,10 +607,10 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="container is-max-desktop">
     <div class="content">
       
-      <h2 class="title is-3">Interactive Flow Matching Visualization</h2>
+      <h2 class="title is-3">Interactive Sampling Visualization</h2>
 
       <div class="interactive-viz-container">
-        <h3 class="title is-4">Interactive Flow Matching Visualization</h3>
+        <!-- <h3 class="title is-4">Interactive Flow Matching Visualization</h3> -->
         
         <!-- Prediction Type Selection -->
         <div class="control-group">
@@ -672,18 +678,206 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </section>
 
-<!--BibTex citation -->
-<section class="section" id="BibTeX">
-  <div class="container is-max-desktop content">
-    <h2 class="title">BibTeX</h2>
-    <pre><code>@article{xu2025temporal,
-  title={Temporal Score Rescaling for Temperature Sampling in Diffusion and Flow Models},
-  author={Xu, Yanbo and Wu, Yu and Park, Sungjae and Zhou, Zhizhou and Tulsiani, Shubham},
-  year={2025}
-}</code></pre>
+
+<!-- Qualitative Results Section -->
+<section class="section">
+  <div class="container" style="max-width: 1400px;">
+    <div class="content">
+      <h2 class="title is-3">Qualitative Results on Real Tasks</h2>
+      <p>
+        We evaluate TSR across diverse applications to demonstrate its versatility and effectiveness. 
+        Our method consistently improves sample quality by allowing models to sample from sharper or flatter distributions as needed for each task.
+      </p>
+
+      <!-- Image Generation -->
+      <div class="generation-section">
+        <h3 class="title is-4">Image Generation</h3>
+        <p>
+          TSR enables control over sample diversity and coherence in diffusion-based image generation by adjusting the temperature parameter K.
+        </p>
+
+        <div class="control-group">
+          <label class="control-label">Select Example:</label>
+          <div class="button-group" style="flex-wrap: wrap;">
+            <button onclick="selectImageExample('example00')" id="img-example-example00" class="button active">Example 1</button>
+            <button onclick="selectImageExample('example01')" id="img-example-example01" class="button">Example 2</button>
+            <button onclick="selectImageExample('example02')" id="img-example-example02" class="button">Example 3</button>
+            <button onclick="selectImageExample('example03')" id="img-example-example03" class="button">Example 4</button>
+            <button onclick="selectImageExample('example04')" id="img-example-example04" class="button">Example 5</button>
+            <button onclick="selectImageExample('example05')" id="img-example-example05" class="button">Example 6</button>
+            <button onclick="selectImageExample('example06')" id="img-example-example06" class="button">Example 7</button>
+            <button onclick="selectImageExample('example07')" id="img-example-example07" class="button">Example 8</button>
+            <button onclick="selectImageExample('example08')" id="img-example-example08" class="button">Example 9</button>
+            <button onclick="selectImageExample('example09')" id="img-example-example09" class="button">Example 10</button>
+            <button onclick="selectImageExample('example10')" id="img-example-example10" class="button">Example 11</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">
+            TSR k value: <span id="img-k-value" style="color: #2563eb; font-family: monospace;">0.95</span>
+          </label>
+          <!-- Slider uses index mapping into availableKValues so all discrete k images are reachable -->
+          <input type="range" id="img-k-slider" min="0" max="10" step="1" value="5" class="slider" style="width: 100%;">
+          <div id="img-k-ticks" style="margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center; font-family: monospace; font-size:0.85rem;"></div>
+        </div>
+        
+        <div class="method-grid" style="grid-template-columns: 1fr 1fr; max-width: 1000px; margin: 0 auto;">
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="img-original" src="static/images/image_SD3/img_original_example00.png" alt="Original" style="width: 100%; max-width: 500px; height: auto; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">Original (SD3)</h4>
+          </div>
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="img-tsr" src="static/images/image_SD3/img_tsr_example00_k0.95.png" alt="TSR" style="width: 100%; max-width: 500px; height: auto; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">TSR</h4>
+          </div>
+        </div>
+        
+        <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <p><strong>Figure 3.</strong> Image generation results with TSR at different temperature settings. TSR with lower k produces more detailed results, while TSR with larger k produces smoother and more likely images.</p>
+        </div>
+      </div>
+
+      <!-- Depth Estimation -->
+      <div class="generation-section">
+        <h3 class="title is-4">Depth Estimation</h3>
+        <p>
+          Sharp sampling with TSR produces cleaner depth maps with better structural consistency.
+        </p>
+
+        <div class="control-group">
+          <label class="control-label">Select Input Image:</label>
+          <div class="button-group">
+            <button onclick="selectDepthInput('example1')" id="depth-input-example1" class="button active">Example 1</button>
+            <button onclick="selectDepthInput('example2')" id="depth-input-example2" class="button">Example 2</button>
+            <button onclick="selectDepthInput('example3')" id="depth-input-example3" class="button">Example 3</button>
+            <button onclick="selectDepthInput('example4')" id="depth-input-example4" class="button">Example 4</button>
+            <button onclick="selectDepthInput('example5')" id="depth-input-example5" class="button">Example 5</button>
+            <button onclick="selectDepthInput('example6')" id="depth-input-example6" class="button">Example 6</button>
+            <button onclick="selectDepthInput('example7')" id="depth-input-example7" class="button">Example 7</button>
+            <button onclick="selectDepthInput('example8')" id="depth-input-example8" class="button">Example 8</button>
+          </div>
+        </div>
+        
+        <div class="method-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="depth-input-display" src="static/images/depth/depth_example1.png" alt="Input" style="width: 100%; height: auto; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">Input Image</h4>
+          </div>
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="depth-original" src="static/images/depth/depth_original_example1.png" alt="Original" style="width: 100%; height: auto; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">Original (DDIM)</h4>
+          </div>
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="depth-tsr" src="static/images/depth/depth_tsr_example1.png" alt="TSR" style="width: 100%; height: auto; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">+ TSR</h4>
+          </div>
+        </div>
+        
+        <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <p><strong>Figure 4.</strong> Depth estimation results. TSR with sharp sampling reduces noise and improves depth boundary definition.</p>
+        </div>
+      </div>
+
+      <!-- Pose Estimation -->
+      <div class="generation-section">
+        <h3 class="title is-4">Object Pose Estimation</h3>
+        <p>
+          TSR improves pose estimation accuracy for geometric objects by reducing uncertainty in orientation and position predictions.
+        </p>
+
+        <div class="control-group">
+          <label class="control-label">Select Example:</label>
+          <div class="button-group">
+            <button onclick="selectPoseInput('class0_1')" id="pose-input-class0_1" class="button active">Example 1</button>
+            <button onclick="selectPoseInput('class1_2')" id="pose-input-class1_2" class="button">Example 2</button>
+            <button onclick="selectPoseInput('class2_1')" id="pose-input-class2_1" class="button">Example 3</button>
+            <button onclick="selectPoseInput('class3_5')" id="pose-input-class3_5" class="button">Example 4</button>
+            <button onclick="selectPoseInput('class4_2')" id="pose-input-class4_2" class="button">Example 5</button>
+          </div>
+        </div>
+        
+        <div class="method-grid" style="grid-template-columns: 1fr 1fr 1fr; max-width: 900px; margin: 0 auto;">
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="pose-input-display" src="static/images/pose/input_class0_1.png" alt="Input" style="width: 100%; max-width: 250px; height: 200px; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">Input Image</h4>
+          </div>
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="pose-original" src="static/images/pose/base_class0_1.png" alt="Original" style="width: 100%; max-width: 250px; height: 200px; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">Original (Score Sampling)</h4>
+          </div>
+          <div class="method-plot">
+            <div class="image-container">
+              <img id="pose-tsr" src="static/images/pose/tsr_class0_1.png" alt="TSR" style="width: 100%; max-width: 250px; height: 200px; object-fit: contain;">
+            </div>
+            <h4 class="subtitle is-6">+ TSR</h4>
+          </div>
+        </div>
+        
+        <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <p><strong>Figure 5.</strong> Object pose estimation results on geometric shapes. TSR produces more accurate pose predictions with reduced orientation uncertainty.</p>
+        </div>
+      </div>
+
+      <!-- Robotics -->
+      <div class="generation-section">
+        <h3 class="title is-4">Robot Manipulation</h3>
+        <p>
+          We compare Pi-0 model, which uses flow matching to model the distribution of robot actions. With TSR, the policy achieves better performance by sampling from a sharper distribution.
+        </p>
+        
+        <div class="method-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1000px; margin: 0 auto;">
+          <div class="method-plot">
+            <div class="video-container">
+              <video width="100%" height="300" controls autoplay muted loop style="border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <source src="static/videos/robot_flow.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <h4 class="subtitle is-5" style="margin-top: 1rem;">Flow Matching</h4>
+            <!-- <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
+              Baseline trajectory generation with standard flow matching.
+            </p> -->
+          </div>
+          
+          <div class="method-plot">
+            <div class="video-container">
+              <video width="100%" height="300" controls autoplay muted loop style="border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <source src="static/videos/robot_tsr.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <h4 class="subtitle is-5" style="margin-top: 1rem;">+ TSR</h4>
+            <!-- <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
+              Enhanced trajectory generation with temporal score rescaling.
+            </p> -->
+          </div>
+        </div>
+        
+        <!-- <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+          <p><strong>Figure 6.</strong> Side-by-side comparison of robot manipulation trajectories. Flow+TSR produces more consistent and successful manipulation with better precision.</p>
+        </div> -->
+      </div>
+
+    </div>
   </div>
 </section>
-<!--End BibTex citation -->
+
+
 
 <footer class="footer">
   <div class="container">
@@ -975,15 +1169,15 @@ function generateOptimizedData(pattern, t, k, method, useCache = true) {
 function getMethodsForPredType() {
   if (currentPredType === 'v') {
     return [
-      { value: 'ground_truth', title: 'Ground Truth' },
-      { value: 'ddpm', title: 'DDPM' },
+      { value: 'ground_truth', title: 'Training Data' },
+      { value: 'ddpm', title: 'Original(DDPM)' },
       { value: 'cns', title: 'CNS' },
       { value: 'tsr', title: 'TSR' }
     ];
   } else {
     return [
-      { value: 'ground_truth', title: 'Ground Truth' },
-      { value: 'flow_ode', title: 'Flow-ODE' },
+      { value: 'ground_truth', title: 'Training Data' },
+      { value: 'flow_ode', title: 'Original(Flow-ODE)' },
       { value: 'flow_nns_sde', title: 'Flow-CNS-SDE' },
       { value: 'flow_psr_ode', title: 'Flow-TSR-ODE' }
     ];
@@ -1150,10 +1344,10 @@ function animateOptimized() {
   let value = parseFloat(slider.value);
   
   const t = 1.0 - value;
-  const stepSize = t > 0.5 ? 0.02 : 0.01;
+  const stepSize = t > 0.5 ? 0.01 : 0.01;
   
   value += stepSize;
-  value = Math.round(value * 50) / 50; // Snap to 0.02 intervals
+  // value = Math.round(value * 50) / 50; // Snap to 0.02 intervals
   
   if (value >= 1) {
     value = 1;
@@ -1251,30 +1445,150 @@ function toggleAnimation() {
   }
 }
 
-// Event listeners
-document.getElementById('t-slider').addEventListener('input', function() {
-  const sliderValue = parseFloat(this.value);
-  const t = 1.0 - sliderValue;
-  document.getElementById('t-value').textContent = t.toFixed(2);
-  updateAllPlotsOptimized();
-});
-
-// Initialize - load JSON data first
-window.addEventListener('DOMContentLoaded', () => {
-  // Show loading spinner initially
-  const spinner = document.getElementById('loading-spinner');
-  if (spinner) {
-    spinner.style.display = 'flex';
-  }
-  
-  // Load data and initialize
   loadFlowData();
   
   // Start FPS monitoring
   fpsInterval = setInterval(() => {
     frameCount = 0; // Reset for next interval
   }, 1000);
+</script>
+
+<script>
+
+
+// Central list of available discrete k values for image examples
+const imageAvailableKValues = [0.8, 0.85, 0.9, 0.92, 0.93, 0.94, 0.95, 0.98, 1.05, 1.1, 1.2];
+
+// Keep the k values in ascending order but adjust spacing so 0.98 appears at center
+// With 11 values, center is position 5 (0-indexed). We want 0.98 there.
+// So we need to redistribute: more values < 0.98 on left, fewer values > 0.98 on right
+const imageSliderOrder = [...imageAvailableKValues]; // Keep original ascending order
+const imageDefaultIndex = imageAvailableKValues.indexOf(0.98); // Index of 0.98 in original array (7)
+
+// Configure slider element runtime properties
+const imgKSliderEl = document.getElementById('img-k-slider');
+if (imgKSliderEl) {
+  imgKSliderEl.min = 0;
+  imgKSliderEl.max = imageSliderOrder.length - 1;
+  imgKSliderEl.step = 1;
+  imgKSliderEl.value = imageDefaultIndex; // Set to 0.98's position
+  
+  // Initialize displayed value and image to 0.98
+  const initialK = 0.98;
+  const activeButton = document.querySelector('[id^="img-example-"].active') || document.getElementById('img-example-example00');
+  const exampleId = activeButton ? activeButton.id.replace('img-example-', '') : 'example00';
+  document.getElementById('img-k-value').textContent = initialK.toFixed(2);
+  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exampleId}_k${initialK.toFixed(2)}.png`;
+}
+
+// Render tick labels under the slider and make them clickable
+function renderImgKTicks() {
+  const container = document.getElementById('img-k-ticks');
+  if (!container || !imageSliderOrder) return;
+  container.innerHTML = '';
+  const total = imageSliderOrder.length;
+  for (let i = 0; i < total; i++) {
+    const k = imageSliderOrder[i];
+    const tick = document.createElement('div');
+    tick.textContent = k.toFixed(2);
+    tick.style.cursor = 'pointer';
+    tick.style.flex = '1 1 0';
+    tick.style.textAlign = 'center';
+    tick.style.padding = '0 4px';
+    tick.dataset.index = i;
+    
+    // Highlight 0.98 (the reference value)
+    if (k === 0.98) {
+      tick.style.color = '#2563eb';
+      tick.style.fontWeight = '700';
+    } else {
+      tick.style.color = '#374151';
+    }
+    
+    tick.addEventListener('click', function() {
+      const idx = parseInt(this.dataset.index, 10);
+      const slider = document.getElementById('img-k-slider');
+      slider.value = idx;
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    container.appendChild(tick);
+  }
+}
+
+// Initial render of ticks
+renderImgKTicks();
+
+// Image generation example selection
+function selectImageExample(exampleId) {
+  // Update button states
+  const buttons = ['img-example-example00', 'img-example-example01', 'img-example-example02', 'img-example-example03', 'img-example-example04', 'img-example-example05', 'img-example-example06', 'img-example-example07', 'img-example-example08', 'img-example-example09', 'img-example-example10'];
+  buttons.forEach(btnId => {
+    document.getElementById(btnId).classList.remove('active');
+  });
+  document.getElementById(`img-example-${exampleId}`).classList.add('active');
+  
+  // Update images
+  document.getElementById('img-original').src = `static/images/image_SD3/img_original_${exampleId}.png`;
+
+  // Read slider as an index into the ordered image slider mapping
+  const idx = parseInt(document.getElementById('img-k-slider').value, 10);
+  const k = imageSliderOrder[idx];
+  document.getElementById('img-k-value').textContent = k.toFixed(2);
+  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exampleId}_k${k.toFixed(2)}.png`;
+}
+
+// Find closest available k value
+function findClosestKValue(targetK, availableKs) {
+  let closest = availableKs[0];
+  let minDiff = Math.abs(targetK - availableKs[0]);
+  
+  for (const k of availableKs) {
+    const diff = Math.abs(targetK - k);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = k;
+    }
+  }
+  
+  return closest;
+}
+
+// Image K slider
+document.getElementById('img-k-slider').addEventListener('input', function() {
+  // Slider value is an index into imageSliderOrder
+  const idx = parseInt(this.value, 10);
+  const k = imageSliderOrder[idx];
+  document.getElementById('img-k-value').textContent = k.toFixed(2);
+  const activeBtn2 = document.querySelector('[id^="img-example-"].active') || document.getElementById('img-example-example00');
+  const exId2 = activeBtn2 ? activeBtn2.id.replace('img-example-', '') : 'example00';
+  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exId2}_k${k.toFixed(2)}.png`;
 });
+// Depth estimation input selection
+function selectDepthInput(inputType) {
+  const buttons = ['depth-input-example1', 'depth-input-example2', 'depth-input-example3', 'depth-input-example4', 'depth-input-example5', 'depth-input-example6', 'depth-input-example7', 'depth-input-example8'];
+  buttons.forEach(btnId => {
+    document.getElementById(btnId).classList.remove('active');
+  });
+  document.getElementById(`depth-input-${inputType}`).classList.add('active');
+  
+  // Update images
+  document.getElementById('depth-input-display').src = `static/images/depth/depth_${inputType}.png`;
+  document.getElementById('depth-original').src = `static/images/depth/depth_original_${inputType}.png`;
+  document.getElementById('depth-tsr').src = `static/images/depth/depth_tsr_${inputType}.png`;
+}
+
+function selectPoseInput(inputType) {
+  const buttons = ['pose-input-class0_1', 'pose-input-class1_2', 'pose-input-class2_1', 'pose-input-class3_5', 'pose-input-class4_2'];
+  buttons.forEach(btnId => {
+    document.getElementById(btnId).classList.remove('active');
+  });
+  document.getElementById(`pose-input-${inputType}`).classList.add('active');
+  
+  // Update images
+  document.getElementById('pose-input-display').src = `static/images/pose/input_${inputType}.png`;
+  document.getElementById('pose-original').src = `static/images/pose/base_${inputType}.png`;
+  document.getElementById('pose-tsr').src = `static/images/pose/tsr_${inputType}.png`;
+}
 </script>
 
 </body>
