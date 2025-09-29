@@ -181,6 +181,12 @@
       object-fit: contain;
       border-radius: 0.25rem;
     }
+    
+    /* Full size display for density evolution images */
+    .generation-section .method-plot img {
+      height: auto;
+      max-height: none;
+    }
 
     .interactive-viz-container {
       background: white;
@@ -284,6 +290,72 @@
 
     .generation-section:last-child {
       border-bottom: none;
+    }
+
+    /* Density evolution slider styling */
+    .density-slider-container {
+      margin-bottom: 2rem;
+    }
+    
+    .density-slider-container .control-label {
+      margin-bottom: 1rem;
+    }
+    
+    .density-slider-container .slider {
+      margin-bottom: 0.5rem;
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      outline: none;
+    }
+    
+    .density-slider-container .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #2563eb;
+      cursor: pointer;
+    }
+    
+    .density-slider-container .slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #2563eb;
+      cursor: pointer;
+      border: none;
+    }
+    
+    /* Tick container styling for proper alignment */
+    .tick-container {
+      position: relative;
+      margin-top: 0.5rem;
+      padding: 0 9px; /* Half of thumb width for alignment */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    
+    .tick-container .tick {
+      cursor: pointer;
+      text-align: center;
+      color: #374151;
+      transition: color 0.3s ease;
+      min-width: 0;
+      flex-shrink: 0;
+    }
+    
+    .tick-container .tick:hover {
+      color: #1f2937;
+    }
+    
+    .tick-container .tick.highlighted {
+      color: #2563eb !important;
+      font-weight: 700;
     }
   </style>
 </head>
@@ -471,23 +543,31 @@
         <!-- <p>
           We first consider unconditional generation, where the data distribution is an isotropic mixture of 3 Gaussians. As shown in the above figure, constant noise scaling (CNS) struggles to preserve the global structure of the data distribution, often biasing samples toward the central mode and collapsing multiple modes. In contrast, our TSR method effectively sharpens each mode while maintaining the overall structure of the distribution.
         </p> -->
+
+        <div class="control-group density-slider-container">
+          <label class="control-label">
+            k value: <span id="uncond-k-value" style="color: #2563eb; font-family: monospace;">8</span>
+          </label>
+          <input type="range" id="uncond-k-slider" min="0" max="8" step="1" value="7" class="slider">
+          <div id="uncond-k-ticks" class="tick-container"></div>
+        </div>
         
         <div class="method-grid">
           <div class="method-plot" id="unconditional-ddpm">
             <div class="image-container">
-              <img src="static/images/ddpm.png" alt="DDPM Unconditional Generation">
+              <img id="uncond-ddpm-img" src="static/images/density_evo/uncond_v_DDPM_k=1.png" alt="DDPM Unconditional Generation">
             </div>
             <h4 class="subtitle is-5">Original (DDPM)</h4>
           </div>
           <div class="method-plot" id="unconditional-tsr">
             <div class="image-container">
-              <img src="static/images/tsr.png" alt="TSR Unconditional Generation">
+              <img id="uncond-tsr-img" src="static/images/density_evo/uncond_v_TSR_k=8.png" alt="TSR Unconditional Generation">
             </div>
             <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
           </div>
           <div class="method-plot" id="unconditional-cns">
             <div class="image-container">
-              <img src="static/images/cns.png" alt="CNS Unconditional Generation">
+              <img id="uncond-cns-img" src="static/images/density_evo/uncond_v_CNS_k=8.png" alt="CNS Unconditional Generation">
             </div>
             <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
           </div>
@@ -528,28 +608,36 @@
           </button>
         </div>
 
+        <div class="control-group density-slider-container">
+          <label class="control-label">
+            <span id="cond-param-label">k value/cfg guidance scale</span>: <span id="cond-k-value" style="color: #2563eb; font-family: monospace;">8</span>
+          </label>
+          <input type="range" id="cond-k-slider" min="0" max="8" step="1" value="7" class="slider">
+          <div id="cond-k-ticks" class="tick-container"></div>
+        </div>
+
         <div class="method-grid">
           <div class="method-plot" id="conditional-ddpm">
             <div class="image-container">
-              <img src="static/images/ddpm_cond.png" alt="DDPM Conditional Generation">
+              <img id="cond-ddpm-img" src="static/images/density_evo/cond_v_DDPM_k=1_cfg=1.png" alt="DDPM Conditional Generation">
             </div>
             <h4 class="subtitle is-5">Original (DDPM, class 0)</h4>
           </div>
           <div class="method-plot" id="conditional-tsr">
             <div class="image-container">
-              <img src="static/images/tsr_cond.png" alt="TSR Conditional Generation">
+              <img id="cond-tsr-img" src="static/images/density_evo/cond_v_TSR_k=8_cfg=1.0.png" alt="TSR Conditional Generation">
             </div>
             <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
           </div>
           <div class="method-plot" id="conditional-cfg">
             <div class="image-container">
-              <img src="static/images/ddpm_cond_cfg.png" alt="CFG Conditional Generation">
+              <img id="cond-cfg-img" src="static/images/density_evo/cond_v_DDPM_k=1_cfg=8.png" alt="CFG Conditional Generation">
             </div>
             <h4 class="subtitle is-5">+Classifier Free Guidance</h4>
           </div>
           <div class="method-plot hidden" id="conditional-cns">
             <div class="image-container">
-              <img src="static/images/cns_cond.png" alt="CNS Conditional Generation">
+              <img id="cond-cns-img" src="static/images/density_evo/cond_v_CNS_k=8_cfg=1.0.png" alt="CNS Conditional Generation">
             </div>
             <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
           </div>
@@ -587,10 +675,124 @@ function toggleConditionalMethod(method) {
     cfgBtn.classList.add('active');
     document.getElementById('conditional-cfg').classList.remove('hidden');
     document.getElementById('conditional-cns').classList.add('hidden');
+    document.getElementById('cond-param-label').textContent = 'cfg value';
   } else {
     cnsBtn.classList.add('active');
     document.getElementById('conditional-cns').classList.remove('hidden');
     document.getElementById('conditional-cfg').classList.add('hidden');
+    document.getElementById('cond-param-label').textContent = 'k value';
+  }
+  
+  // Update images for current slider value
+  updateConditionalImages();
+}
+
+// Available k/cfg values for density evolution sliders
+const densityKValues = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16];
+
+// Initialize density evolution sliders
+function initializeDensitySliders() {
+  // Unconditional slider
+  const uncondSlider = document.getElementById('uncond-k-slider');
+  const uncondTicks = document.getElementById('uncond-k-ticks');
+  
+  // Set initial value to k=8 (index 7)
+  uncondSlider.value = 7;
+  document.getElementById('uncond-k-value').textContent = '8';
+  
+  // Create tick marks
+  uncondTicks.innerHTML = '';
+  densityKValues.forEach((k, index) => {
+    const tick = document.createElement('div');
+    tick.textContent = k.toString();
+    tick.className = 'tick';
+    tick.dataset.index = index;
+    
+    if (k === 8) {
+      tick.classList.add('highlighted');
+    }
+    
+    tick.addEventListener('click', function() {
+      uncondSlider.value = this.dataset.index;
+      uncondSlider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    
+    uncondTicks.appendChild(tick);
+  });
+  
+  // Conditional slider
+  const condSlider = document.getElementById('cond-k-slider');
+  const condTicks = document.getElementById('cond-k-ticks');
+  
+  // Set initial value to cfg=8 (index 7) 
+  condSlider.value = 7;
+  document.getElementById('cond-k-value').textContent = '8';
+  
+  // Create tick marks
+  condTicks.innerHTML = '';
+  densityKValues.forEach((k, index) => {
+    const tick = document.createElement('div');
+    tick.textContent = k.toString();
+    tick.className = 'tick';
+    tick.dataset.index = index;
+    
+    if (k === 8) {
+      tick.classList.add('highlighted');
+    }
+    
+    tick.addEventListener('click', function() {
+      condSlider.value = this.dataset.index;
+      condSlider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    
+    condTicks.appendChild(tick);
+  });
+}
+
+// Update unconditional images based on slider value
+function updateUnconditionalImages() {
+  const sliderValue = parseInt(document.getElementById('uncond-k-slider').value);
+  const k = densityKValues[sliderValue];
+  
+  document.getElementById('uncond-k-value').textContent = k.toString();
+  
+  // Update tick highlighting
+  const ticks = document.querySelectorAll('#uncond-k-ticks .tick');
+  ticks.forEach((tick, index) => {
+    tick.classList.toggle('highlighted', index === sliderValue);
+  });
+  
+  // Update images - DDPM always uses k=1
+  document.getElementById('uncond-ddpm-img').src = `static/images/density_evo/uncond_v_DDPM_k=1.png`;
+  document.getElementById('uncond-tsr-img').src = `static/images/density_evo/uncond_v_TSR_k=${k}.png`;
+  document.getElementById('uncond-cns-img').src = `static/images/density_evo/uncond_v_CNS_k=${k}.png`;
+}
+
+// Update conditional images based on slider value and selected method
+function updateConditionalImages() {
+  const sliderValue = parseInt(document.getElementById('cond-k-slider').value);
+  const value = densityKValues[sliderValue];
+  const isConfigMethod = document.getElementById('cfg-btn').classList.contains('active');
+  
+  document.getElementById('cond-k-value').textContent = value.toString();
+  
+  // Update tick highlighting
+  const ticks = document.querySelectorAll('#cond-k-ticks .tick');
+  ticks.forEach((tick, index) => {
+    tick.classList.toggle('highlighted', index === sliderValue);
+  });
+  
+  // Original (DDPM) always shows cfg=1, k=1 (not controlled by slider)
+  document.getElementById('cond-ddpm-img').src = `static/images/density_evo/cond_v_DDPM_k=1_cfg=1.png`;
+  
+  if (isConfigMethod) {
+    // CFG method - vary cfg parameter for CFG, k parameter for TSR
+    document.getElementById('cond-tsr-img').src = `static/images/density_evo/cond_v_TSR_k=${value}_cfg=1.0.png`;
+    document.getElementById('cond-cfg-img').src = `static/images/density_evo/cond_v_DDPM_k=1_cfg=${value}.png`;
+  } else {
+    // CNS method - vary k parameter for both TSR and CNS
+    document.getElementById('cond-tsr-img').src = `static/images/density_evo/cond_v_TSR_k=${value}_cfg=1.0.png`;
+    document.getElementById('cond-cns-img').src = `static/images/density_evo/cond_v_CNS_k=${value}_cfg=1.0.png`;
   }
 }
 
@@ -599,6 +801,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Set initial state - both sections should show TSR + DDPM
   // The buttons already have 'active' class and plots have correct visibility
   console.log('Page loaded - default state initialized');
+  
+  // Initialize density evolution sliders
+  initializeDensitySliders();
+  
+  // Add event listeners for sliders
+  document.getElementById('uncond-k-slider').addEventListener('input', updateUnconditionalImages);
+  document.getElementById('cond-k-slider').addEventListener('input', updateConditionalImages);
 });
 </script>
 
@@ -1486,23 +1695,19 @@ function renderImgKTicks() {
   const container = document.getElementById('img-k-ticks');
   if (!container || !imageSliderOrder) return;
   container.innerHTML = '';
+  container.className = 'tick-container'; // Use same styling as density sliders
+  
   const total = imageSliderOrder.length;
   for (let i = 0; i < total; i++) {
     const k = imageSliderOrder[i];
     const tick = document.createElement('div');
     tick.textContent = k.toFixed(2);
-    tick.style.cursor = 'pointer';
-    tick.style.flex = '1 1 0';
-    tick.style.textAlign = 'center';
-    tick.style.padding = '0 4px';
+    tick.className = 'tick';
     tick.dataset.index = i;
     
-    // Highlight 0.98 (the reference value)
+    // Highlight 0.98 (the reference value) initially
     if (k === 0.98) {
-      tick.style.color = '#2563eb';
-      tick.style.fontWeight = '700';
-    } else {
-      tick.style.color = '#374151';
+      tick.classList.add('highlighted');
     }
     
     tick.addEventListener('click', function() {
@@ -1534,6 +1739,13 @@ function selectImageExample(exampleId) {
   const idx = parseInt(document.getElementById('img-k-slider').value, 10);
   const k = imageSliderOrder[idx];
   document.getElementById('img-k-value').textContent = k.toFixed(2);
+  
+  // Update tick highlighting (maintain current selection)
+  const ticks = document.querySelectorAll('#img-k-ticks .tick');
+  ticks.forEach((tick, index) => {
+    tick.classList.toggle('highlighted', index === idx);
+  });
+  
   document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exampleId}_k${k.toFixed(2)}.png`;
 }
 
@@ -1559,6 +1771,13 @@ document.getElementById('img-k-slider').addEventListener('input', function() {
   const idx = parseInt(this.value, 10);
   const k = imageSliderOrder[idx];
   document.getElementById('img-k-value').textContent = k.toFixed(2);
+  
+  // Update tick highlighting
+  const ticks = document.querySelectorAll('#img-k-ticks .tick');
+  ticks.forEach((tick, index) => {
+    tick.classList.toggle('highlighted', index === idx);
+  });
+  
   const activeBtn2 = document.querySelector('[id^="img-example-"].active') || document.getElementById('img-example-example00');
   const exId2 = activeBtn2 ? activeBtn2.id.replace('img-example-', '') : 'example00';
   document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exId2}_k${k.toFixed(2)}.png`;
