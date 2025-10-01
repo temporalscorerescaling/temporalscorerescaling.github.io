@@ -57,18 +57,40 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
 
   <style>
+    /* Half-width utility for slider sections */
+    .half-width {
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    @media (max-width: 768px) {
+      .half-width {
+        width: 100%;
+      }
+    }
+    :root {
+      /* Base thumb size for all sliders */
+      --slider-thumb-size: 10px;
+      /* Fine-tune tick-to-interval spacing: try -1px, 0px, 1px, etc. */
+      --tick-align-adjust: -10px;
+      /* Extra space between labels (gap between grid columns) */
+      --tick-column-gap: 0px; /* e.g., 12px, 20px */
+      /* Stretch tick row beyond container width to create more room between labels */
+      --tick-stretch: 110%; /* e.g., 105%, 110% */
+    }
+
     .slider::-webkit-slider-thumb {
       appearance: none;
-      width: 20px;
-      height: 20px;
+      width: var(--slider-thumb-size); /* Standardize thumb size for alignment with tick padding */
+      height: var(--slider-thumb-size);
       border-radius: 50%;
       background: #3b82f6;
       cursor: pointer;
     }
     
     .slider::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
+      width: var(--slider-thumb-size); /* Standardize thumb size for alignment with tick padding */
+      height: var(--slider-thumb-size);
       border-radius: 50%;
       background: #3b82f6;
       cursor: pointer;
@@ -312,16 +334,16 @@
     
     .density-slider-container .slider::-webkit-slider-thumb {
       appearance: none;
-      width: 18px;
-      height: 18px;
+      width: var(--slider-thumb-size);
+      height: var(--slider-thumb-size);
       border-radius: 50%;
       background: #2563eb;
       cursor: pointer;
     }
     
     .density-slider-container .slider::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
+      width: var(--slider-thumb-size);
+      height: var(--slider-thumb-size);
       border-radius: 50%;
       background: #2563eb;
       cursor: pointer;
@@ -332,12 +354,21 @@
     .tick-container {
       position: relative;
       margin-top: 0.5rem;
-      padding: 0 9px; /* Half of thumb width for alignment */
-      display: flex;
-      justify-content: space-between;
+      /* Half of thumb width for alignment + optional fine-tune adjust */
+      padding-left: calc(var(--slider-thumb-size) / 2 + var(--tick-align-adjust));
+      padding-right: calc(var(--slider-thumb-size) / 2 + var(--tick-align-adjust));
+      /* Allow widening/narrowing label spacing by stretching container width */
+      width: var(--tick-stretch);
+      margin-left: calc((100% - var(--tick-stretch)) / 2);
+      margin-right: calc((100% - var(--tick-stretch)) / 2);
+      display: grid; /* Use grid so each tick gets equal width cell */
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      column-gap: var(--tick-column-gap);
       align-items: center;
       font-family: monospace;
       font-size: 0.85rem;
+      text-align: center;
     }
     
     .tick-container .tick {
@@ -347,6 +378,7 @@
       transition: color 0.3s ease;
       min-width: 0;
       flex-shrink: 0;
+      white-space: nowrap; /* Keep labels on a single line */
     }
     
     .tick-container .tick:hover {
@@ -425,6 +457,22 @@
               </span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Teaser Video -->
+<section class="section" style="padding-top: 0rem; padding-bottom: 1rem;">
+  <div class="container" style="max-width: 1600px;">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full">
+        <div class="video-container" style="position: relative; width: 100%; margin: 0rem 0;">
+          <video width="100%" autoplay muted loop controls style="border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 1000px;">
+            <source src="static/videos/teaser_animation_hd.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
         </div>
       </div>
     </div>
@@ -519,16 +567,33 @@
         While CNS is widely used to control sample variance and improve quality, it <strong>only applies to stochastic samplers</strong> and <strong>a fixed scaling factor over sampling horizon often leads to impaired distribution and mode dropping.</strong>
       </p> -->
 
+      <!-- Method Section -->
+      <h2 class="title is-3">Method</h2>
+      <p>
+        We propose Temporal Score Rescaling (TSR), a simple method that controls the likelihood-diversity trade-off for diffusion and flow models. 
+        TSR can be easily applied to <em>any off-the-shelf diffusion or flow model</em>, without any training or extra inference-time computation.
+      </p>
+      
+      <p>
+        Given a pretrained diffusion model predicting noise $\epsilon_\theta(x,t)$ and parameter $k$ controlling the temperature, during the sampling process, TSR replaces $\epsilon_\theta(x,t)$ with a scaled prediction:
+      </p>
+      <div class="has-text-centered" style="margin: 1.5rem 0;">
+          $$ \tilde{\epsilon}_\theta(x,t) = \frac{\alpha_t^2 \sigma^2 + \sigma_t^2}{\alpha_t \tfrac{\sigma^2}{k} + \sigma_t^2}~\epsilon_\theta(x,t) \equiv r_t(k, \sigma) \epsilon_\theta(x,t)$$
+      </div>
+      <p>
+        where $\alpha_t$, $\sigma_t$ are the diffusion noise schedule given by $x_t = \alpha_t x_0 + \sigma_t \epsilon$. $\sigma$ is a user-input parameter.
+      </p>
+      <p>
+        For a flow matching model predicting flow velocity $v_\theta(x,t)$, TSR replace it with the scaled flow velocity:
+      </p>
+      <div class="has-text-centered" style="margin: 1.5rem 0;">
+          $$ \tilde{v}_{\theta}(x,t) = \alpha_t^{-1}(r_t(k, \sigma)(\alpha_t v_\theta(x,t) - \dot{\alpha_t}x) + \dot{\alpha_t}x) $$
+      </div>
+
       <!-- Illustrative Examples Section -->
-      <h2 class="title is-3">Analysis on Mixture of 1D Gaussians</h2>
+      <!-- <h2 class="title is-3">Analysis on Mixture of 1D Gaussians</h2>
       <p>
         To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a <strong>simple isotropic Gaussian mixture</strong> as a data distribution. 
-        We use the analytical score function of the GMM for all methods, for both conditional and unconditional generation. 
-        Intuitively, we would want the sampled distribution to preserve the global structure of the data distribution, while adjusting the "sharpness" of each mode to control sample likelihood and diversity.
-      </p>
-
-      <!-- <p>
-        To better understand the limitations of prior art and the benefits of our proposed Temporal Score Rescaling (TSR), we consider a <strong>simple isotropic Gaussian mixture</strong> as a data distribution, where top 3 modes are class 0 and bottom 3 modes are class 1. 
         We use the analytical score function of the GMM for all methods, for both conditional and unconditional generation. 
         Intuitively, we would want the sampled distribution to preserve the global structure of the data distribution, while adjusting the "sharpness" of each mode to control sample likelihood and diversity.
       </p> -->
@@ -536,15 +601,34 @@
       <br>
       <!-- Unconditional Generation -->
       <div class="generation-section">
-        <h3 class="title is-4">Unconditional Generation</h3>
+        <h3 class="title is-4">Steering Distribution with TSR </h3>
         <p>
-          We first evaluate our method on unconditional generation using an isotropic mixture of 3 Gaussians, shown below.
+          By controling the inverse temperature $k$, we can steer the sampled distribution to be sharper (larger $k$) or broader (smaller $k$).
+          At $k=1$ TSR yields the original distribution. 
+        </p>
 
-        <!-- <p>
-          We first consider unconditional generation, where the data distribution is an isotropic mixture of 3 Gaussians. As shown in the above figure, constant noise scaling (CNS) struggles to preserve the global structure of the data distribution, often biasing samples toward the central mode and collapsing multiple modes. In contrast, our TSR method effectively sharpens each mode while maintaining the overall structure of the distribution.
-        </p> -->
-
-        <div class="control-group density-slider-container">
+        <div class="method-grid">
+          <div class="method-plot" id="unconditional-ddpm">
+            <div class="image-container">
+              <img id="uncond-ddpm-img" src="static/images/animated_1d/uncond_v_TSR_k1.0.gif" alt="DDPM Unconditional Generation">
+            </div>
+            <h4 class="subtitle is-5">Original (DDPM)</h4>
+          </div>
+          <div class="method-plot" id="unconditional-tsr">
+            <div class="image-container">
+              <img id="uncond-tsr-img" src="static/images/animated_1d/uncond_v_TSR_k8.0.gif" alt="TSR Unconditional Generation">
+            </div>
+            <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
+          </div>
+          <div class="method-plot hidden" id="unconditional-cns">
+            <div class="image-container">
+              <img id="uncond-cns-img" src="static/images/animated_1d/uncond_v_CNS_k8.0.gif" alt="CNS Unconditional Generation">
+            </div>
+            <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
+          </div>
+        </div>
+        
+        <div class="control-group density-slider-container half-width">
           <label class="control-label">
             k value: <span id="uncond-k-value" style="color: #2563eb; font-family: monospace;">8</span>
           </label>
@@ -552,31 +636,9 @@
           <div id="uncond-k-ticks" class="tick-container"></div>
         </div>
         
-        <div class="method-grid">
-          <div class="method-plot" id="unconditional-ddpm">
-            <div class="image-container">
-              <img id="uncond-ddpm-img" src="static/images/density_evo/uncond_v_DDPM_k=1.png" alt="DDPM Unconditional Generation">
-            </div>
-            <h4 class="subtitle is-5">Original (DDPM)</h4>
-          </div>
-          <div class="method-plot" id="unconditional-tsr">
-            <div class="image-container">
-              <img id="uncond-tsr-img" src="static/images/density_evo/uncond_v_TSR_k=8.png" alt="TSR Unconditional Generation">
-            </div>
-            <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
-          </div>
-          <div class="method-plot" id="unconditional-cns">
-            <div class="image-container">
-              <img id="uncond-cns-img" src="static/images/density_evo/uncond_v_CNS_k=8.png" alt="CNS Unconditional Generation">
-            </div>
-            <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
-          </div>
-        </div>
-        
         <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
-          <p><strong>Figure 1.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
-          The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
-          Constant noise scaling (CNS) struggles to preserve the global structure, often biasing samples toward the central mode and collapsing multiple modes, while our TSR method maintains distribution structure.
+          <p> Drag the slider to control the $k$ values. Each plot shows the prior distribution (left), the probability density evolves over time (middle), and the final generated distribution (right).
+            We also show real sample trajectories during the reverse diffusion process.  
           </p>
 
           <!-- <p><strong>Figure 1.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
@@ -588,59 +650,58 @@
       <br>
       <!-- Conditional Generation -->
       <div class="generation-section">
-        <h3 class="title is-4">Conditional Generation</h3>
-        <!-- <p>
-          We also evaluate the methods on conditional generation, where the data distribution is an isotropic mixture of 6 Gaussians, with the top 3 modes belonging to class 0 and the bottom 3 modes to class 1.
-          Similar to the unconditional case, CNS struggles to biases samples towards central mode. Classifer Free Guidance (CFG) also fail to preserve the global structure by preferring samples modes around the edges.
-          TSR effectively sharpens each mode while preserving the overall structure of the distribution.
-        </p> -->
-
+        <h3 class="title is-3">Comparison with Prior Methods</h3>
         <p>
-          Here we evaluate conditional generation where the data distribution is an isotropic mixture of 6 Gaussians, with the top 3 modes belonging to class 0 and the bottom 3 modes to class 1.  
+          Here we evaluate conditional generation where the data distribution is an isotropic mixture of 6 Gaussians, with the top 3 modes belonging to class 1 and the bottom 3 modes to class 2. We show 
+          the sampled conditional distribution for class 1.
+          We compare TSR with Constant Noise Scaling (CNS), the de facto approach for 'pseudo temperature' sampling with diffusion models and Classifier-Free Guidance (CFG). As shown below, 
+          both CNS and CFG distorts the distribution, while TSR preserves the equal weights between modes. Moreover, CNS does not apply on deterministic samplers (e.g., Flow-ODE), while TSR applies 
+          to any diffusion and flow models with <em>any samplers</em>.
         </p>
-        
-        <div class="method-control-buttons">
-          <button data-method="cfg" id="cfg-btn" class="button active" onclick="toggleConditionalMethod('cfg')">
-            <span>CFG</span>
-          </button>
-          <button data-method="cns" id="cns-btn" class="button" onclick="toggleConditionalMethod('cns')">
-            <span>CNS</span>
-          </button>
-        </div>
 
-        <div class="control-group density-slider-container">
-          <label class="control-label">
-            <span id="cond-param-label">k value/cfg guidance scale</span>: <span id="cond-k-value" style="color: #2563eb; font-family: monospace;">8</span>
-          </label>
-          <input type="range" id="cond-k-slider" min="0" max="8" step="1" value="7" class="slider">
-          <div id="cond-k-ticks" class="tick-container"></div>
+        <!-- Sampler Control Buttons -->
+        <div class="control-group" style="margin-bottom: 2rem;">
+          <label class="control-label">Sampler:</label>
+          <div class="button-group">
+            <button onclick="setConditionalSampler('ddpm')" id="cond-sampler-ddpm" class="button" style="background-color: #2563eb; color: white;">DDPM (Stochastic)</button>
+            <button onclick="setConditionalSampler('flow')" id="cond-sampler-flow" class="button" style="background-color: #e5e7eb; color: #374151;">Flow (Deterministic)</button>
+          </div>
         </div>
 
         <div class="method-grid">
           <div class="method-plot" id="conditional-ddpm">
             <div class="image-container">
-              <img id="cond-ddpm-img" src="static/images/density_evo/cond_v_DDPM_k=1_cfg=1.png" alt="DDPM Conditional Generation">
+              <img id="cond-ddpm-img" src="static/images/animated_1d/cond_v_DDPM_cfg1.0.gif" alt="DDPM Conditional Generation">
             </div>
-            <h4 class="subtitle is-5">Original (DDPM, class 0)</h4>
+            <h4 class="subtitle is-5" id="cond-ddpm-title">Original (DDPM, class 0)</h4>
           </div>
           <div class="method-plot" id="conditional-tsr">
             <div class="image-container">
-              <img id="cond-tsr-img" src="static/images/density_evo/cond_v_TSR_k=8_cfg=1.0.png" alt="TSR Conditional Generation">
+              <img id="cond-tsr-img" src="static/images/animated_1d/cond_v_TSR_k8.0.gif" alt="TSR Conditional Generation">
             </div>
             <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
           </div>
-          <div class="method-plot" id="conditional-cfg">
+          <div class="method-plot" id="conditional-baseline">
             <div class="image-container">
-              <img id="cond-cfg-img" src="static/images/density_evo/cond_v_DDPM_k=1_cfg=8.png" alt="CFG Conditional Generation">
+              <img id="cond-baseline-img" src="static/images/animated_1d/cond_v_CNS_k8.0.gif" alt="Baseline Conditional Generation">
             </div>
-            <h4 class="subtitle is-5">+Classifier Free Guidance</h4>
-          </div>
-          <div class="method-plot hidden" id="conditional-cns">
-            <div class="image-container">
-              <img id="cond-cns-img" src="static/images/density_evo/cond_v_CNS_k=8_cfg=1.0.png" alt="CNS Conditional Generation">
+            <h4 class="subtitle is-5" id="baseline-title">+Constant Noise Scaling</h4>
+            <div class="baseline-dropdown" style="text-align: center; margin-top: 15px;">
+              <label style="margin-right: 10px; font-weight: 500; font-size: 14px;">Baseline Method:</label>
+              <select id="baseline-method-select" onchange="toggleConditionalMethod(this.value)" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: white;">
+                <option value="cfg">Classifier Free Guidance</option>
+                <option value="cns" selected>Constant Noise Scaling</option>
+              </select>
             </div>
-            <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
           </div>
+        </div>
+        
+        <div class="control-group density-slider-container half-width">
+          <label class="control-label">
+            <span id="cond-param-label">k value/cfg guidance scale</span>: <span id="cond-k-value" style="color: #2563eb; font-family: monospace;">8</span>
+          </label>
+          <input type="range" id="cond-k-slider" min="0" max="8" step="1" value="7" class="slider">
+          <div id="cond-k-ticks" class="tick-container"></div>
         </div>
         
         <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
@@ -648,10 +709,9 @@
           The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
           </p> -->
 
-          <p><strong>Figure 2.</strong> Density evolution during the sampling process from noise (t=1.0) to data (t=0.0). 
-          The prior distribution is shown on the left, the density evolution in the center, and the final generated distribution on the right. 
-          The data distribution contains 6 Gaussians with top 3 modes belonging to class 0 and bottom 3 modes to class 1. 
-          CNS biases samples towards central modes while Classifier Free Guidance (CFG) prefers edge modes. Both methods fail to preserve the global structure, while our TSR method maintains distribution structure.
+          <p>Drag the slider to control $k$ value for TSR and CNS, or the guidance scale for CFG.</p>
+          <p>
+          The data distribution contains 6 Gaussians with top 3 modes belonging to class 1 and bottom 3 modes to class 2. Showing conditional distribution for class 1.
           </p>
         </div>
 
@@ -662,33 +722,62 @@
 </section>
 
 <script>
+// Global variable to track current conditional sampler
+let currentConditionalSampler = 'ddpm'; // default to DDPM
+
+// Set conditional sampler (DDPM or Flow)
+function setConditionalSampler(sampler) {
+  currentConditionalSampler = sampler;
+  
+  // Update button styles
+  const ddpmBtn = document.getElementById('cond-sampler-ddpm');
+  const flowBtn = document.getElementById('cond-sampler-flow');
+  
+  if (sampler === 'ddpm') {
+    ddpmBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    flowBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    
+    // Update titles
+    document.getElementById('cond-ddpm-title').textContent = 'Original (DDPM, class 0)';
+  } else {
+    ddpmBtn.style.cssText = 'background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    flowBtn.style.cssText = 'background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;';
+    
+    // Keep CNS option visible for flow (it will show "Not Applicable")
+    const cnsOption = document.querySelector('#baseline-method-select option[value="cns"]');
+    if (cnsOption) cnsOption.style.display = 'block';
+    
+    // Update titles
+    document.getElementById('cond-ddpm-title').textContent = 'Original (Flow, class 0)';
+  }
+  
+  updateConditionalImages();
+}
+
 // Method selection functionality for conditional generation only
 function toggleConditionalMethod(method) {
-  // Update button states
-  const cfgBtn = document.getElementById('cfg-btn');
-  const cnsBtn = document.getElementById('cns-btn');
+  // Update dropdown selection
+  const dropdown = document.getElementById('baseline-method-select');
+  dropdown.value = method;
   
-  cfgBtn.classList.remove('active');
-  cnsBtn.classList.remove('active');
+  // Update baseline panel title and content
+  const baselineTitle = document.getElementById('baseline-title');
+  const paramLabel = document.getElementById('cond-param-label');
   
   if (method === 'cfg') {
-    cfgBtn.classList.add('active');
-    document.getElementById('conditional-cfg').classList.remove('hidden');
-    document.getElementById('conditional-cns').classList.add('hidden');
-    document.getElementById('cond-param-label').textContent = 'cfg value';
+    baselineTitle.textContent = '+Classifier Free Guidance';
+    paramLabel.textContent = 'k value/cfg guidance scale';
   } else {
-    cnsBtn.classList.add('active');
-    document.getElementById('conditional-cns').classList.remove('hidden');
-    document.getElementById('conditional-cfg').classList.add('hidden');
-    document.getElementById('cond-param-label').textContent = 'k value';
+    baselineTitle.textContent = '+Constant Noise Scaling';
+    paramLabel.textContent = 'k value';
   }
   
   // Update images for current slider value
   updateConditionalImages();
 }
 
-// Available k/cfg values for density evolution sliders
-const densityKValues = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16];
+// Available k/cfg values for density evolution sliders (matching actual animated GIF files)
+const densityKValues = [0.0625, 0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0];
 
 // Initialize density evolution sliders
 function initializeDensitySliders() {
@@ -696,7 +785,7 @@ function initializeDensitySliders() {
   const uncondSlider = document.getElementById('uncond-k-slider');
   const uncondTicks = document.getElementById('uncond-k-ticks');
   
-  // Set initial value to k=8 (index 7)
+  // Set initial value to k=8.0 (index 7)
   uncondSlider.value = 7;
   document.getElementById('uncond-k-value').textContent = '8';
   
@@ -708,7 +797,7 @@ function initializeDensitySliders() {
     tick.className = 'tick';
     tick.dataset.index = index;
     
-    if (k === 8) {
+    if (k === 8.0) {
       tick.classList.add('highlighted');
     }
     
@@ -719,12 +808,15 @@ function initializeDensitySliders() {
     
     uncondTicks.appendChild(tick);
   });
+  // Ensure equal spacing using grid columns
+  uncondTicks.style.display = 'grid';
+  uncondTicks.style.gridTemplateColumns = `repeat(${densityKValues.length}, 1fr)`;
   
   // Conditional slider
   const condSlider = document.getElementById('cond-k-slider');
   const condTicks = document.getElementById('cond-k-ticks');
   
-  // Set initial value to cfg=8 (index 7) 
+  // Set initial value to cfg=8.0 (index 7) 
   condSlider.value = 7;
   document.getElementById('cond-k-value').textContent = '8';
   
@@ -736,7 +828,7 @@ function initializeDensitySliders() {
     tick.className = 'tick';
     tick.dataset.index = index;
     
-    if (k === 8) {
+    if (k === 8.0) {
       tick.classList.add('highlighted');
     }
     
@@ -747,6 +839,9 @@ function initializeDensitySliders() {
     
     condTicks.appendChild(tick);
   });
+  // Ensure equal spacing using grid columns
+  condTicks.style.display = 'grid';
+  condTicks.style.gridTemplateColumns = `repeat(${densityKValues.length}, 1fr)`;
 }
 
 // Update unconditional images based on slider value
@@ -762,17 +857,21 @@ function updateUnconditionalImages() {
     tick.classList.toggle('highlighted', index === sliderValue);
   });
   
-  // Update images - DDPM always uses k=1
-  document.getElementById('uncond-ddpm-img').src = `static/images/density_evo/uncond_v_DDPM_k=1.png`;
-  document.getElementById('uncond-tsr-img').src = `static/images/density_evo/uncond_v_TSR_k=${k}.png`;
-  document.getElementById('uncond-cns-img').src = `static/images/density_evo/uncond_v_CNS_k=${k}.png`;
+  // Format k value to ensure .0 for integers
+  const kFormatted = k % 1 === 0 ? k.toFixed(1) : k.toString();
+  
+  // Update images - DDPM uses TSR k=1 (no rescaling), now using animated GIFs
+  document.getElementById('uncond-ddpm-img').src = `static/images/animated_1d/uncond_v_TSR_k1.0.gif`;
+  document.getElementById('uncond-tsr-img').src = `static/images/animated_1d/uncond_v_TSR_k${kFormatted}.gif`;
+  document.getElementById('uncond-cns-img').src = `static/images/animated_1d/uncond_v_CNS_k${kFormatted}.gif`;
 }
 
 // Update conditional images based on slider value and selected method
 function updateConditionalImages() {
   const sliderValue = parseInt(document.getElementById('cond-k-slider').value);
   const value = densityKValues[sliderValue];
-  const isConfigMethod = document.getElementById('cfg-btn').classList.contains('active');
+  const isConfigMethod = document.getElementById('baseline-method-select').value === 'cfg';
+  const baselineImg = document.getElementById('cond-baseline-img');
   
   document.getElementById('cond-k-value').textContent = value.toString();
   
@@ -782,17 +881,60 @@ function updateConditionalImages() {
     tick.classList.toggle('highlighted', index === sliderValue);
   });
   
-  // Original (DDPM) always shows cfg=1, k=1 (not controlled by slider)
-  document.getElementById('cond-ddpm-img').src = `static/images/density_evo/cond_v_DDPM_k=1_cfg=1.png`;
+  // Format value to ensure .0 for integers
+  const valueFormatted = value % 1 === 0 ? value.toFixed(1) : value.toString();
   
-  if (isConfigMethod) {
-    // CFG method - vary cfg parameter for CFG, k parameter for TSR
-    document.getElementById('cond-tsr-img').src = `static/images/density_evo/cond_v_TSR_k=${value}_cfg=1.0.png`;
-    document.getElementById('cond-cfg-img').src = `static/images/density_evo/cond_v_DDPM_k=1_cfg=${value}.png`;
+  if (currentConditionalSampler === 'ddpm') {
+    // DDPM (v prediction type)
+    // Original always shows cfg=1.0
+    document.getElementById('cond-ddpm-img').src = `static/images/animated_1d/cond_v_DDPM_cfg1.0.gif`;
+    
+    // Always ensure baseline image is visible for DDPM and hide "Not Applicable" message
+    baselineImg.style.display = 'block';
+    const naMessage = baselineImg.parentElement.querySelector('.na-message');
+    if (naMessage) naMessage.style.display = 'none';
+    
+    if (isConfigMethod) {
+      // CFG method - vary cfg parameter for CFG, k parameter for TSR
+      document.getElementById('cond-tsr-img').src = `static/images/animated_1d/cond_v_TSR_k${valueFormatted}.gif`;
+      baselineImg.src = `static/images/animated_1d/cond_v_DDPM_cfg${valueFormatted}.gif`;
+    } else {
+      // CNS method - vary k parameter for both TSR and CNS
+      document.getElementById('cond-tsr-img').src = `static/images/animated_1d/cond_v_TSR_k${valueFormatted}.gif`;
+      baselineImg.src = `static/images/animated_1d/cond_v_CNS_k${valueFormatted}.gif`;
+    }
   } else {
-    // CNS method - vary k parameter for both TSR and CNS
-    document.getElementById('cond-tsr-img').src = `static/images/density_evo/cond_v_TSR_k=${value}_cfg=1.0.png`;
-    document.getElementById('cond-cns-img').src = `static/images/density_evo/cond_v_CNS_k=${value}_cfg=1.0.png`;
+    // Flow sampler
+    // Original always shows baseline flow
+    document.getElementById('cond-ddpm-img').src = `static/images/animated_1d/cond_flow_Euler-ODE_cfg1.0.gif`;
+    
+    if (isConfigMethod) {
+      // CFG method - vary cfg parameter for CFG, k parameter for TSR
+      document.getElementById('cond-tsr-img').src = `static/images/animated_1d/cond_flow_TSR_k${valueFormatted}.gif`;
+      baselineImg.src = `static/images/animated_1d/cond_flow_Euler-ODE_cfg${valueFormatted}.gif`;
+    } else {
+      // CNS method - but for flow, CNS is not applicable
+      document.getElementById('cond-tsr-img').src = `static/images/animated_1d/cond_flow_TSR_k${valueFormatted}.gif`;
+      // Show "Not Applicable" message for CNS with flow
+      baselineImg.style.display = 'none';
+      const container = baselineImg.parentElement;
+      let naMessage = container.querySelector('.na-message');
+      if (!naMessage) {
+        naMessage = document.createElement('div');
+        naMessage.className = 'na-message';
+        naMessage.style.cssText = 'display: flex; align-items: center; justify-content: center; height: 16rem; background-color: #f3f4f6; border-radius: 0.25rem; color: #6b7280; font-style: italic; font-size: 1.1rem;';
+        naMessage.textContent = 'Not Applicable';
+        container.appendChild(naMessage);
+      }
+      naMessage.style.display = 'flex';
+    }
+    
+    // Show baseline image if not CNS method
+    if (isConfigMethod) {
+      baselineImg.style.display = 'block';
+      const naMessage = baselineImg.parentElement.querySelector('.na-message');
+      if (naMessage) naMessage.style.display = 'none';
+    }
   }
 }
 
@@ -805,9 +947,21 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize density evolution sliders
   initializeDensitySliders();
   
+  // Initialize conditional sampler to DDPM
+  currentConditionalSampler = 'ddpm';
+  
   // Add event listeners for sliders
   document.getElementById('uncond-k-slider').addEventListener('input', updateUnconditionalImages);
   document.getElementById('cond-k-slider').addEventListener('input', updateConditionalImages);
+  
+  // Set CNS as default method in conditional section
+  document.getElementById('baseline-method-select').value = 'cns';
+  
+  // Set initial label for CNS
+  document.getElementById('cond-param-label').textContent = 'k value';
+  
+  // Update conditional images to ensure correct initial state
+  updateConditionalImages();
 });
 </script>
 
@@ -816,20 +970,20 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="container is-max-desktop">
     <div class="content">
       
-      <h2 class="title is-3">Interactive Sampling Visualization</h2>
+      <h2 class="title is-3">Comparison on 2D Distributions</h2>
 
       <div class="interactive-viz-container">
         <!-- <h3 class="title is-4">Interactive Flow Matching Visualization</h3> -->
         
         <!-- Prediction Type Selection -->
         <div class="control-group">
-          <label class="control-label">Prediction Type:</label>
+          <label class="control-label">Sampler:</label>
           <div class="button-group">
             <button onclick="setPredType('v')" id="v-btn" style="background-color: #e5e7eb; color: #374151;">
-              Diffusion 
+              DDPM (Stochastic) 
             </button>
             <button onclick="setPredType('flow')" id="flow-btn" style="background-color: #2563eb; color: white;">
-              Flow
+              Flow (Deterministic)
             </button>
           </div>
         </div>
@@ -860,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <!-- Time Slider -->
-        <div class="time-control">
+        <div class="time-control half-width">
           <label class="control-label">
             Time (T): <span id="t-value" style="color: #2563eb; font-family: monospace;">1.0</span>
           </label>
@@ -892,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <section class="section">
   <div class="container" style="max-width: 1400px;">
     <div class="content">
-      <h2 class="title is-3">Qualitative Results on Real Tasks</h2>
+      <h2 class="title is-3">Applications to Real Tasks</h2>
       <p>
         We evaluate TSR across diverse applications to demonstrate its versatility and effectiveness. 
         Our method consistently improves sample quality by allowing models to sample from sharper or flatter distributions as needed for each task.
@@ -902,7 +1056,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="generation-section">
         <h3 class="title is-4">Image Generation</h3>
         <p>
-          TSR enables control over sample diversity and coherence in diffusion-based image generation by adjusting the temperature parameter K.
+          For text to image generation, we find it beneficial to flatten the sample distribution by adopting a $k$ slightly smaller than 1 with TSR. 
+          In this way, TSR enhances the high-frequency details in the images and improve both FID and CLIP score.
         </p>
 
         <div class="control-group">
@@ -922,19 +1077,10 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div class="control-group">
-          <label class="control-label">
-            TSR k value: <span id="img-k-value" style="color: #2563eb; font-family: monospace;">0.95</span>
-          </label>
-          <!-- Slider uses index mapping into availableKValues so all discrete k images are reachable -->
-          <input type="range" id="img-k-slider" min="0" max="10" step="1" value="5" class="slider" style="width: 100%;">
-          <div id="img-k-ticks" style="margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center; font-family: monospace; font-size:0.85rem;"></div>
-        </div>
-        
         <div class="method-grid" style="grid-template-columns: 1fr 1fr; max-width: 1000px; margin: 0 auto;">
           <div class="method-plot">
             <div class="image-container">
-              <img id="img-original" src="static/images/image_SD3/img_original_example00.png" alt="Original" style="width: 100%; max-width: 500px; height: auto; object-fit: contain;">
+              <img id="img-original" src="static/images/image_SD3/img_tsr_example00_k1.00.png" alt="Original" style="width: 100%; max-width: 500px; height: auto; object-fit: contain;">
             </div>
             <h4 class="subtitle is-6">Original (SD3)</h4>
           </div>
@@ -946,8 +1092,17 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         
+        <div class="control-group half-width">
+          <label class="control-label">
+            TSR k value: <span id="img-k-value" style="color: #2563eb; font-family: monospace;">0.95</span>
+          </label>
+          <!-- Slider uses index mapping into availableKValues so all discrete k images are reachable -->
+          <input type="range" id="img-k-slider" min="0" max="10" step="1" value="5" class="slider" style="width: 100%;">
+          <div id="img-k-ticks" class="tick-container"></div>
+        </div>
+        
         <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
-          <p><strong>Figure 3.</strong> Image generation results with TSR at different temperature settings. TSR with lower k produces more detailed results, while TSR with larger k produces smoother and more likely images.</p>
+          <p>TSR applied to Stable Diffusion 3.</p>
         </div>
       </div>
 
@@ -955,7 +1110,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="generation-section">
         <h3 class="title is-4">Depth Estimation</h3>
         <p>
-          Sharp sampling with TSR produces cleaner depth maps with better structural consistency.
+          For depth estimation, apply TSR to Marigold, a diffusion-based single-view depth estimation model.
+          TSR improve accuracy be sampling from a sharper distribution, yielding less noisy dept predictions.
         </p>
 
         <div class="control-group">
@@ -994,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
-          <p><strong>Figure 4.</strong> Depth estimation results. TSR with sharp sampling reduces noise and improves depth boundary definition.</p>
+          <p> Depth esstimation results on Marigold.</p>
         </div>
       </div>
 
@@ -1002,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="generation-section">
         <h3 class="title is-4">Object Pose Estimation</h3>
         <p>
-          TSR improves pose estimation accuracy for geometric objects by reducing uncertainty in orientation and position predictions.
+          Similar to depth estiamtion, TSR improves pose estimation accuracy for geometric objects by reducing uncertainty in orientation and position predictions.
         </p>
 
         <div class="control-group">
@@ -1038,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="has-text-centered" style="margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
-          <p><strong>Figure 5.</strong> Object pose estimation results on geometric shapes. TSR produces more accurate pose predictions with reduced orientation uncertainty.</p>
+          <p> Object pose prediction results on geometric shapes. each dot marks a sample's first canonical axis (colored by rotation), while circles denote ground-truth poses.</p>
         </div>
       </div>
 
@@ -1221,6 +1377,11 @@ function getData(pattern, t, k, method) {
     return generateOptimizedData(pattern, 0.0, k, method, false);
   }
   
+  // Handle Flow CNS as Not Applicable - return empty data
+  if (currentPredType === 'flow' && method === 'flow_cns') {
+    return { x: [], y: [] };
+  }
+  
   // Snap k to nearest available value
   const actualK = snapToNearestK(k);
   
@@ -1387,7 +1548,7 @@ function getMethodsForPredType() {
     return [
       { value: 'ground_truth', title: 'Training Data' },
       { value: 'flow_ode', title: 'Original(Flow-ODE)' },
-      { value: 'flow_nns_sde', title: 'Flow-CNS-SDE' },
+      { value: 'flow_cns', title: 'CNS (N/A)' },
       { value: 'flow_psr_ode', title: 'Flow-TSR-ODE' }
     ];
   }
@@ -1404,19 +1565,41 @@ function updateAllPlotsOptimized() {
   document.getElementById('t-value').textContent = t.toFixed(2);
   
   const methods = getMethodsForPredType();
-  const updateData = { x: [], y: [] };
+  const updateData = { x: [], y: [], text: [], mode: [] };
   
   // Generate data for all 8 subplots - prioritize JSON data
   for (let i = 0; i < 4; i++) {
     const swissData = getData('swissroll', t, k, methods[i].value);
     updateData.x.push(swissData.x);
     updateData.y.push(swissData.y);
+    
+    // Handle Not Applicable case for Flow CNS
+    if (currentPredType === 'flow' && i === 2) {
+      updateData.text.push(['Not Applicable']);
+      updateData.mode.push('text');
+      updateData.x[i] = [0];
+      updateData.y[i] = [0];
+    } else {
+      updateData.text.push([]);
+      updateData.mode.push('markers');
+    }
   }
   
   for (let i = 0; i < 4; i++) {
     const checkerData = getData('checkerboard', t, k, methods[i].value);
     updateData.x.push(checkerData.x);
     updateData.y.push(checkerData.y);
+    
+    // Handle Not Applicable case for Flow CNS
+    if (currentPredType === 'flow' && i === 2) {
+      updateData.text.push(['Not Applicable']);
+      updateData.mode.push('text');
+      updateData.x[i + 4] = [0];
+      updateData.y[i + 4] = [0];
+    } else {
+      updateData.text.push([]);
+      updateData.mode.push('markers');
+    }
   }
   
   if (plotInitialized) {
@@ -1443,7 +1626,7 @@ function initializePlot(initialData) {
   
   // Create all traces
   for (let i = 0; i < 8; i++) {
-    traces.push({
+    const traceData = {
       x: initialData.x[i],
       y: initialData.y[i],
       mode: 'markers',
@@ -1456,7 +1639,19 @@ function initializePlot(initialData) {
       showlegend: false,
       xaxis: i < 4 ? (i === 0 ? 'x' : `x${i + 1}`) : `x${i + 1}`,
       yaxis: i < 4 ? (i === 0 ? 'y' : `y${i + 1}`) : `y${i + 1}`
-    });
+    };
+    
+    // Handle Not Applicable case for Flow CNS (subplot index 2 and 6)
+    if (currentPredType === 'flow' && (i === 2 || i === 6)) {
+      traceData.mode = 'text';
+      traceData.text = ['Not Applicable'];
+      traceData.x = [0];
+      traceData.y = [0];
+      traceData.textfont = { size: 16, color: '#6b7280' };
+      traceData.marker = { size: 0, opacity: 0 };
+    }
+    
+    traces.push(traceData);
   }
   
   // Optimized layout
@@ -1666,13 +1861,13 @@ function toggleAnimation() {
 
 
 // Central list of available discrete k values for image examples
-const imageAvailableKValues = [0.8, 0.85, 0.9, 0.92, 0.93, 0.94, 0.95, 0.98, 1.05, 1.1, 1.2];
+const imageAvailableKValues = [0.8, 0.85, 0.9, 0.92, 0.95, 0.98, 1.0, 1.02, 1.05, 1.08, 1.1, 1.15, 1.2];
 
 // Keep the k values in ascending order but adjust spacing so 0.98 appears at center
 // With 11 values, center is position 5 (0-indexed). We want 0.98 there.
 // So we need to redistribute: more values < 0.98 on left, fewer values > 0.98 on right
 const imageSliderOrder = [...imageAvailableKValues]; // Keep original ascending order
-const imageDefaultIndex = imageAvailableKValues.indexOf(0.98); // Index of 0.98 in original array (7)
+const imageDefaultIndex = imageAvailableKValues.indexOf(0.95); // Index of 0.95 in original array (4)
 
 // Configure slider element runtime properties
 const imgKSliderEl = document.getElementById('img-k-slider');
@@ -1680,10 +1875,10 @@ if (imgKSliderEl) {
   imgKSliderEl.min = 0;
   imgKSliderEl.max = imageSliderOrder.length - 1;
   imgKSliderEl.step = 1;
-  imgKSliderEl.value = imageDefaultIndex; // Set to 0.98's position
-  
-  // Initialize displayed value and image to 0.98
-  const initialK = 0.98;
+  imgKSliderEl.value = imageDefaultIndex; // Set to 0.95's position
+
+  // Initialize displayed value and image to 0.95
+  const initialK = 0.95;
   const activeButton = document.querySelector('[id^="img-example-"].active') || document.getElementById('img-example-example00');
   const exampleId = activeButton ? activeButton.id.replace('img-example-', '') : 'example00';
   document.getElementById('img-k-value').textContent = initialK.toFixed(2);
@@ -1695,7 +1890,14 @@ function renderImgKTicks() {
   const container = document.getElementById('img-k-ticks');
   if (!container || !imageSliderOrder) return;
   container.innerHTML = '';
+  // Remove any inline styles set in HTML to avoid conflicts
+  if (container.getAttribute('style')) {
+    container.removeAttribute('style');
+  }
   container.className = 'tick-container'; // Use same styling as density sliders
+  // Enforce grid layout with equal columns for alignment
+  container.style.display = 'grid';
+  container.style.gridTemplateColumns = `repeat(${imageSliderOrder.length}, 1fr)`;
   
   const total = imageSliderOrder.length;
   for (let i = 0; i < total; i++) {
@@ -1706,7 +1908,7 @@ function renderImgKTicks() {
     tick.dataset.index = i;
     
     // Highlight 0.98 (the reference value) initially
-    if (k === 0.98) {
+    if (k === 0.95) {
       tick.classList.add('highlighted');
     }
     
@@ -1733,7 +1935,7 @@ function selectImageExample(exampleId) {
   document.getElementById(`img-example-${exampleId}`).classList.add('active');
   
   // Update images
-  document.getElementById('img-original').src = `static/images/image_SD3/img_original_${exampleId}.png`;
+  document.getElementById('img-original').src = `static/images/image_SD3/img_tsr_${exampleId}_k1.00.png`;
 
   // Read slider as an index into the ordered image slider mapping
   const idx = parseInt(document.getElementById('img-k-slider').value, 10);
