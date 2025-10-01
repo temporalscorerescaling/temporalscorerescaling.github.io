@@ -431,30 +431,30 @@
                           <i class="fas fa-file-pdf"></i>
                         </span>
                         <span>Paper</span>
+                        </a>
+                      </span>
+                    <!-- ArXiv abstract Link -->
+                    <span class="link-block">
+                      <a href="https://arxiv.org/" target="_blank"
+                      class="external-link button is-normal is-rounded is-dark">
+                      <span class="icon">
+                        <i class="ai ai-arxiv"></i>
+                      </span>
+                      <span>arXiv</span>
+                      </a>
+                    </span>
+                    <!-- Github link -->
+                    <span class="link-block">
+                      <a href="https://github.com/temporalscorerescaling/TSR" target="_blank"
+                      class="external-link button is-normal is-rounded is-dark">
+                      <span class="icon">
+                        <i class="fab fa-github"></i>
+                      </span>
+                      <span>Code</span>
                       </a>
                     </span>
 
-                  <!-- Github link -->
-                  <span class="link-block">
-                    <a href="https://arxiv.org/" target="_blank"
-                    class="external-link button is-normal is-rounded is-dark">
-                    <span class="icon">
-                      <i class="fab fa-github"></i>
-                    </span>
-                    <span>Code</span>
-                  </a>
-                </span>
-
-                <!-- ArXiv abstract Link -->
-                <span class="link-block">
-                  <a href="https://arxiv.org/" target="_blank"
-                  class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon">
-                    <i class="ai ai-arxiv"></i>
-                  </span>
-                  <span>arXiv</span>
-                </a>
-              </span>
+                
             </div>
           </div>
         </div>
@@ -584,7 +584,7 @@
         where $\alpha_t$, $\sigma_t$ are the diffusion noise schedule given by $x_t = \alpha_t x_0 + \sigma_t \epsilon$. $\sigma$ is a user-input parameter.
       </p>
       <p>
-        For a flow matching model predicting flow velocity $v_\theta(x,t)$, TSR replace it with the scaled flow velocity:
+        For a flow matching model predicting flow velocity $v_\theta(x,t)$, TSR replaces it with the following velocity:
       </p>
       <div class="has-text-centered" style="margin: 1.5rem 0;">
           $$ \tilde{v}_{\theta}(x,t) = \alpha_t^{-1}(r_t(k, \sigma)(\alpha_t v_\theta(x,t) - \dot{\alpha_t}x) + \dot{\alpha_t}x) $$
@@ -616,13 +616,13 @@
           </div>
           <div class="method-plot" id="unconditional-tsr">
             <div class="image-container">
-              <img id="uncond-tsr-img" src="static/images/animated_1d/uncond_v_TSR_k8.0.gif" alt="TSR Unconditional Generation">
+              <img id="uncond-tsr-img" src="static/images/animated_1d/uncond_v_TSR_k4.0.gif" alt="TSR Unconditional Generation">
             </div>
             <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
           </div>
           <div class="method-plot hidden" id="unconditional-cns">
             <div class="image-container">
-              <img id="uncond-cns-img" src="static/images/animated_1d/uncond_v_CNS_k8.0.gif" alt="CNS Unconditional Generation">
+              <img id="uncond-cns-img" src="static/images/animated_1d/uncond_v_CNS_k4.0.gif" alt="CNS Unconditional Generation">
             </div>
             <h4 class="subtitle is-5">+Constant Noise Scaling</h4>
           </div>
@@ -677,13 +677,13 @@
           </div>
           <div class="method-plot" id="conditional-tsr">
             <div class="image-container">
-              <img id="cond-tsr-img" src="static/images/animated_1d/cond_v_TSR_k8.0.gif" alt="TSR Conditional Generation">
+              <img id="cond-tsr-img" src="static/images/animated_1d/cond_v_TSR_k4.0.gif" alt="TSR Conditional Generation">
             </div>
             <h4 class="subtitle is-5">+Temporal Score Rescaling (Ours)</h4>
           </div>
           <div class="method-plot" id="conditional-baseline">
             <div class="image-container">
-              <img id="cond-baseline-img" src="static/images/animated_1d/cond_v_CNS_k8.0.gif" alt="Baseline Conditional Generation">
+              <img id="cond-baseline-img" src="static/images/animated_1d/cond_v_CNS_k4.0.gif" alt="Baseline Conditional Generation">
             </div>
             <h4 class="subtitle is-5" id="baseline-title">+Constant Noise Scaling</h4>
             <div class="baseline-dropdown" style="text-align: center; margin-top: 15px;">
@@ -785,9 +785,9 @@ function initializeDensitySliders() {
   const uncondSlider = document.getElementById('uncond-k-slider');
   const uncondTicks = document.getElementById('uncond-k-ticks');
   
-  // Set initial value to k=8.0 (index 7)
-  uncondSlider.value = 7;
-  document.getElementById('uncond-k-value').textContent = '8';
+  // Set initial value to k=4.0 (index 6)
+  uncondSlider.value = 6;
+  document.getElementById('uncond-k-value').textContent = '4';
   
   // Create tick marks
   uncondTicks.innerHTML = '';
@@ -797,7 +797,7 @@ function initializeDensitySliders() {
     tick.className = 'tick';
     tick.dataset.index = index;
     
-    if (k === 8.0) {
+    if (k === 4.0) {
       tick.classList.add('highlighted');
     }
     
@@ -816,9 +816,9 @@ function initializeDensitySliders() {
   const condSlider = document.getElementById('cond-k-slider');
   const condTicks = document.getElementById('cond-k-ticks');
   
-  // Set initial value to cfg=8.0 (index 7) 
-  condSlider.value = 7;
-  document.getElementById('cond-k-value').textContent = '8';
+  // Set initial value to cfg=4.0 (index 6) 
+  condSlider.value = 6;
+  document.getElementById('cond-k-value').textContent = '4';
   
   // Create tick marks
   condTicks.innerHTML = '';
@@ -828,7 +828,7 @@ function initializeDensitySliders() {
     tick.className = 'tick';
     tick.dataset.index = index;
     
-    if (k === 8.0) {
+    if (k === 4.0) {
       tick.classList.add('highlighted');
     }
     
@@ -1111,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <h3 class="title is-4">Depth Estimation</h3>
         <p>
           For depth estimation, apply TSR to Marigold, a diffusion-based single-view depth estimation model.
-          TSR improve accuracy be sampling from a sharper distribution, yielding less noisy dept predictions.
+          TSR improve accuracy be sampling from a sharper distribution, yielding less noisy depth predictions.
         </p>
 
         <div class="control-group">
@@ -1882,7 +1882,7 @@ if (imgKSliderEl) {
   const activeButton = document.querySelector('[id^="img-example-"].active') || document.getElementById('img-example-example00');
   const exampleId = activeButton ? activeButton.id.replace('img-example-', '') : 'example00';
   document.getElementById('img-k-value').textContent = initialK.toFixed(2);
-  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exampleId}_k${initialK.toFixed(2)}.png`;
+  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exampleId}_k${initialK.toFixed(2)}.png?t=${Date.now()}`;
 }
 
 // Render tick labels under the slider and make them clickable
@@ -1935,7 +1935,17 @@ function selectImageExample(exampleId) {
   document.getElementById(`img-example-${exampleId}`).classList.add('active');
   
   // Update images
-  document.getElementById('img-original').src = `static/images/image_SD3/img_tsr_${exampleId}_k1.00.png`;
+  const originalImg = document.getElementById('img-original');
+  const originalSrc = `static/images/image_SD3/img_tsr_${exampleId}_k1.00.png?t=${Date.now()}`;
+  originalImg.src = originalSrc;
+  
+  // Add error handling for debugging
+  originalImg.onerror = function() {
+    console.error(`Failed to load original image: ${originalSrc}`);
+  };
+  originalImg.onload = function() {
+    console.log(`Successfully loaded original image: ${originalSrc}`);
+  };
 
   // Read slider as an index into the ordered image slider mapping
   const idx = parseInt(document.getElementById('img-k-slider').value, 10);
@@ -1948,7 +1958,20 @@ function selectImageExample(exampleId) {
     tick.classList.toggle('highlighted', index === idx);
   });
   
-  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exampleId}_k${k.toFixed(2)}.png`;
+  const tsrImg = document.getElementById('img-tsr');
+  const tsrSrc = `static/images/image_SD3/img_tsr_${exampleId}_k${k.toFixed(2)}.png?t=${Date.now()}`;
+  tsrImg.src = tsrSrc;
+  
+  // Add error handling for TSR image as well
+  tsrImg.onerror = function() {
+    console.error(`Failed to load TSR image: ${tsrSrc}`);
+  };
+  tsrImg.onload = function() {
+    console.log(`Successfully loaded TSR image: ${tsrSrc}`);
+  };
+  
+  // Debug logging
+  console.log(`Loading images for ${exampleId}: Original=${originalSrc}, TSR=${tsrSrc}`);
 }
 
 // Find closest available k value
@@ -1982,7 +2005,7 @@ document.getElementById('img-k-slider').addEventListener('input', function() {
   
   const activeBtn2 = document.querySelector('[id^="img-example-"].active') || document.getElementById('img-example-example00');
   const exId2 = activeBtn2 ? activeBtn2.id.replace('img-example-', '') : 'example00';
-  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exId2}_k${k.toFixed(2)}.png`;
+  document.getElementById('img-tsr').src = `static/images/image_SD3/img_tsr_${exId2}_k${k.toFixed(2)}.png?t=${Date.now()}`;
 });
 // Depth estimation input selection
 function selectDepthInput(inputType) {
