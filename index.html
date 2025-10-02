@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <h3 class="title is-4">Image Generation</h3>
         <p>
           For text to image generation, we find it beneficial to flatten the sample distribution by adopting a $k$ slightly smaller than 1 with TSR. 
-          In this way, TSR enhances the high-frequency details in the images and improve both FID and CLIP score.
+          In this way, TSR enhances the high-frequency details in the images and improves both FID and CLIP score.
         </p>
 
         <div class="control-group">
@@ -1110,8 +1110,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="generation-section">
         <h3 class="title is-4">Depth Estimation</h3>
         <p>
-          For depth estimation, apply TSR to Marigold, a diffusion-based single-view depth estimation model.
-          TSR improve accuracy be sampling from a sharper distribution, yielding less noisy depth predictions.
+          For depth estimation, we apply TSR to Marigold, a diffusion-based single-view depth estimation model.
+          TSR improves accuracy by sampling from a sharper distribution, yielding less noisy depth predictions.
         </p>
 
         <div class="control-group">
