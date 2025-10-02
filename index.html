@@ -655,7 +655,7 @@
           Here we evaluate conditional generation where the data distribution is an isotropic mixture of 6 Gaussians, with the top 3 modes belonging to class 1 and the bottom 3 modes to class 2. We show 
           the sampled conditional distribution for class 1.
           We compare TSR with Constant Noise Scaling (CNS), the de facto approach for 'pseudo temperature' sampling with diffusion models and Classifier-Free Guidance (CFG). As shown below, 
-          both CNS and CFG distorts the distribution, while TSR preserves the equal weights between modes. Moreover, CNS does not apply on deterministic samplers (e.g., Flow-ODE), while TSR applies 
+          both CNS and CFG distort the distribution, while TSR preserves the equal weights between modes. Moreover, CNS does not apply on deterministic samplers (e.g., Flow-ODE), while TSR applies 
           to any diffusion and flow models with <em>any samplers</em>.
         </p>
 
@@ -1158,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="generation-section">
         <h3 class="title is-4">Object Pose Estimation</h3>
         <p>
-          Similar to depth estiamtion, TSR improves pose estimation accuracy for geometric objects by reducing uncertainty in orientation and position predictions.
+          Similar to depth estiamtion, TSR improves pose estimation accuracy for geometric objects by reducing uncertainty in orientation predictions.
         </p>
 
         <div class="control-group">
@@ -1202,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="generation-section">
         <h3 class="title is-4">Robot Manipulation</h3>
         <p>
-          We compare Pi-0 model, which uses flow matching to model the distribution of robot actions. With TSR, the policy achieves better performance by sampling from a sharper distribution.
+          We perform comparison on Pi-0 model, which uses flow matching to model the distribution of robot actions. With TSR, the policy achieves better success rate by sampling from a sharper distribution.
         </p>
         
         <div class="method-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1000px; margin: 0 auto;">
